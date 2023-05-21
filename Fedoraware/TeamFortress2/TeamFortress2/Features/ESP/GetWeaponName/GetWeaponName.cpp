@@ -325,12 +325,11 @@ const char* WeaponESP::GetWeaponName(int weaponID, int itemIndex, EWeaponType we
 	case TF_WEAPON_SHOTGUN_PRIMARY:
 	case TF_WEAPON_SHOTGUN_PYRO:
 	case TF_WEAPON_SHOTGUN_SOLDIER:
-		switch (itemIndex)
-		{
-		case Engi_m_TheWidowmaker:
-			return "WIDOWMAKER";
-		default: return "SHOTGUN";
-		}
+	{
+	case Engi_m_TheWidowmaker: //apparently this is part of TF_WEAPON_SHOTGUN_PRIMARY
+		return "WIDOWMAKER";
+	default: return "SHOTGUN";
+	}
 	case TF_WEAPON_SHOVEL:
 		switch (itemIndex)
 		{
