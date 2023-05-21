@@ -23,18 +23,20 @@ Vec3 CAimbotProjectile::Predictor_t::Extrapolate(float time)
 /* Returns the projectile info of a given weapon */
 bool CAimbotProjectile::GetProjectileInfo(CBaseCombatWeapon* pWeapon, ProjectileInfo_t& out)
 {
+
 	switch (pWeapon->GetWeaponID())
 	{
 		case TF_WEAPON_ROCKETLAUNCHER:
 		case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:
 		case TF_WEAPON_PARTICLE_CANNON:
 		{
+			float speedRocket = Utils::ATTRIB_HOOK_FLOAT(1100, "mult_projectile_speed", pWeapon, 0, 1);
+			out = { speedRocket, 0.0f };
 			IsBoosted = true;
-			out = { Utils::ATTRIB_HOOK_FLOAT(1100.0f, "mult_projectile_speed", pWeapon, 0, 1), 0.0f };
 			break;
 		}
-
 		case TF_WEAPON_GRENADELAUNCHER:
+<<<<<<< HEAD
 		{
 			bool isLochnLoad = G::CurItemDefIndex == Demoman_m_TheLochnLoad;
 			float speed = isLochnLoad ? 1490.0f : 1200.0f;
@@ -55,39 +57,24 @@ bool CAimbotProjectile::GetProjectileInfo(CBaseCombatWeapon* pWeapon, Projectile
 			break;
 		}
 
+=======
+>>>>>>> parent of 3b75cab6 (Better proj info)
 		case TF_WEAPON_CANNON:
 		{
+			float speedPipe = Utils::ATTRIB_HOOK_FLOAT(1200, "mult_projectile_speed", pWeapon, 0, 1);
+			out = { speedPipe, 0.5f };
 			IsBoosted = true;
-			out = { 1454.0f, 0.5f };
 			break;
 		}
-
-		case TF_WEAPON_FLAREGUN:
+		case TF_WEAPON_RAYGUN:
 		{
-			out = { 2000.0f, 0.2f };
+			out = { 1200.0f, 0.0f };
 			break;
 		}
-
-		case TF_WEAPON_CLEAVER:
-		case TF_WEAPON_RAYGUN_REVENGE:
+		case TF_WEAPON_SHOTGUN_BUILDING_RESCUE:
+		case TF_WEAPON_CROSSBOW:
 		{
-			out = { 3000.0f, 0.45f };
-			break;
-		}
-
-		case TF_WEAPON_COMPOUND_BOW:
-		{
-			float charge = (I::GlobalVars->curtime - pWeapon->GetChargeBeginTime());
-			float speed = Math::RemapValClamped(charge, 0.0f, 1.0f, 1800.0f, 2600.0f);
-			float grav_mod = Math::RemapValClamped(charge, 0.0f, 1.0f, 0.5f, 0.1f);
-			
-			out = { speed, grav_mod };
-			break;
-		}
-
-		case TF_WEAPON_SYRINGEGUN_MEDIC:
-		{
-			out = { 1000.0f, 0.2f };
+			out = { 2400.0f, 0.2f };
 			break;
 		}
 
@@ -105,16 +92,43 @@ bool CAimbotProjectile::GetProjectileInfo(CBaseCombatWeapon* pWeapon, Projectile
 			break;
 		}
 
-		case TF_WEAPON_RAYGUN:
+		case TF_WEAPON_FLAREGUN:
 		{
-			out = { 1200.0f, 0.0f };
+			out = { 2000.0f, 0.3f };
 			break;
 		}
 
-		case TF_WEAPON_CROSSBOW:
-		case TF_WEAPON_SHOTGUN_BUILDING_RESCUE:
+		case TF_WEAPON_RAYGUN_REVENGE:
+		case TF_WEAPON_CLEAVER:
 		{
-			out = { 2400.0f, 0.2f };
+			out = { 3000.0f, 0.2f };
+			break;
+		}
+
+		case TF_WEAPON_SYRINGEGUN_MEDIC:
+		{
+			out = { 1000.0f, 0.2f };
+			break;
+		}
+
+		case TF_WEAPON_COMPOUND_BOW:
+		{
+			const float charge = (I::GlobalVars->curtime - pWeapon->GetChargeBeginTime());
+			out = {
+				Math::RemapValClamped(charge, 0.0f, 1.f, 1800, 2600),
+				Math::RemapValClamped(charge, 0.0f, 1.f, 0.5, 0.1)
+			};
+			break;
+		}
+
+		case TF_WEAPON_PIPEBOMBLAUNCHER:
+		{
+			const float charge = (I::GlobalVars->curtime - pWeapon->GetChargeBeginTime());
+			float QuickiebombCheck = G::CurItemDefIndex == Demoman_s_TheQuickiebombLauncher ? 1.2f : 4.0f;
+			out = {
+				Math::RemapValClamped(charge, 0.0f, QuickiebombCheck, 900, 2400),
+				Math::RemapValClamped(charge, 0.0f, QuickiebombCheck, 0.483f, 0.085f)
+			};
 			break;
 		}
 	}
