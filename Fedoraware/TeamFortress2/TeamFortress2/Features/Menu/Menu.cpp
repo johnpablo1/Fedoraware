@@ -1117,6 +1117,7 @@ void CMenu::MenuVisuals()
 					WToggle("Clean Screenshots", &Vars::Visuals::CleanScreenshots.Value);
 					WToggle("Crosshair aim position", &Vars::Visuals::CrosshairAimPos.Value);
 					WToggle("Viewmodel aim position", &Vars::Visuals::AimbotViewmodel.Value);
+					WToggle("Rainbow tracers", &Vars::Visuals::BulletTracerRainbow.Value); HelpMarker("Bullet tracer color will be dictated by a changing color");
 					WToggle("Viewmodel sway", &Vars::Visuals::ViewmodelSway.Value);
 					if (Vars::Visuals::ViewmodelSway.Value)
 					{
@@ -1189,7 +1190,6 @@ void CMenu::MenuVisuals()
 							else { HelpMarker("Turn off particle colors to be able to change the color of this."); }
 						}
 						WToggle("Bullet tracers", &Vars::Visuals::BulletTracer.Value);
-						WToggle("Rainbow tracers", &Vars::Visuals::BulletTracerRainbow.Value); HelpMarker("Bullet tracer color will be dictated by a changing color");
 						ColorPickerL("Bullet tracer colour", Colors::BulletTracer);
 					}
 
