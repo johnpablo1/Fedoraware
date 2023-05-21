@@ -636,7 +636,7 @@ bool CAimbotProjectile::WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon
 			case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:
 			case TF_WEAPON_FLAREGUN:
 			{
-				hullSize = { 1.f, 1.f, 1.f }; //tf_projectile_base.cpp @L117
+				hullSize = { 0.f, 3.7f, 3.7f };
 
 				Vec3 vecOffset = Vec3(23.5f, 12.0f, -3.0f); //tf_weaponbase_gun.cpp @L529 & @L760
 				if (G::CurItemDefIndex == Soldier_m_TheOriginal)
@@ -652,7 +652,7 @@ bool CAimbotProjectile::WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon
 			}
 			case TF_WEAPON_SYRINGEGUN_MEDIC:
 			{
-				hullSize = { 1.f, 1.f, 1.f };
+				hullSize = { 0.f, 1.f, 1.f };
 
 				const Vec3 vecOffset(16.f, 6.f, -8.f); //tf_weaponbase_gun.cpp @L628
 				Utils::GetProjectileFireSetup(pLocal, predictedViewAngles, vecOffset, &vVisCheck);
@@ -669,7 +669,7 @@ bool CAimbotProjectile::WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon
 			case TF_WEAPON_RAYGUN:
 			case TF_WEAPON_DRG_POMSON:
 			{
-				hullSize = { 1.f, 1.f, 1.f };
+				hullSize = { 0.1f, 0.1f, 0.1f };
 				Vec3 vecOffset(23.5f, -8.0f, -3.0f); //tf_weaponbase_gun.cpp @L568
 				if (pLocal->IsDucking())
 				{
@@ -683,7 +683,7 @@ bool CAimbotProjectile::WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon
 			case TF_WEAPON_STICKBOMB:
 			case TF_WEAPON_STICKY_BALL_LAUNCHER:
 			{
-				hullSize = { 4.f, 4.f, 4.f }; //basegrenade_timed.cpp @L32 ????
+				hullSize = { 2.f, 2.f, 2.f };
 
 				auto vecAngle = Vec3(), vecForward = Vec3(), vecRight = Vec3(), vecUp = Vec3();
 				Math::AngleVectors({ -RAD2DEG(out.m_flPitch), RAD2DEG(out.m_flYaw), 0.0f }, &vecForward, &vecRight, &vecUp);
