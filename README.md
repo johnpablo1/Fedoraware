@@ -2,21 +2,13 @@
 <p align="center" style="margin-bottom: 0px !important;">
   <img width="200" src=".github/assets/fedoraware.png" alt="Fedoraware logo." align="center">
 </p>
-<h2 align="center" style="margin-top: 0px;">SE-Owned but coollllll</h2>
+<h2 align="center" style="margin-top: 0px;">fedoraware but working projectile aimbot and maybe more?!?!!?!</h2>
 <p align="center">
 <a href="https://github.com/stax132349/Fedoraware/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/stax132349/Fedoraware"></a>
 <a href="https://discord.gg/tbfT8W8sdP"><img alt="Fedoraware Discord Server" src="https://img.shields.io/discord/1069923050499354624?label=Discord&logo=Discord"></a>
 <a href="https://github.com/stax132349/Fedoraware/actions"><img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/stax132349/Fedoraware/MSBuild"></a>
 <a href="https://github.com/stax132349/Fedoraware/commits/main"><img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/w/stax132349/Fedoraware"></a>
 </p>  
-
-<hr/>
-
-<p align="center">
-<a href="https://nightly.link/stax132349/Fedoraware/workflows/msbuild/main/Fedoraware.zip">
-<img src=".github/assets/download.png" align="center" width="100%" height="auto">
-</a>
-</p>
 
 ## Notes:
 - It is required to use dxlevel 90+ due to issues with ImGui.
