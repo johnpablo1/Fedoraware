@@ -40,7 +40,7 @@ bool CAimbotProjectile::GetProjectileInfo(CBaseCombatWeapon* pWeapon, Projectile
 			float speed = isLochnLoad ? 1490.0f : 1200.0f;
 
 			IsBoosted = true;
-			out = { speed, 0.5f, Utils::ATTRIB_HOOK_FLOAT(3.0f, "fuse_mult", pWeapon, 0, 1) };
+			out = { speed, 0.5f, Utils::ATTRIB_HOOK_FLOAT(2.3f, "fuse_mult", pWeapon, 0, 1) };
 			break;
 
 		}
