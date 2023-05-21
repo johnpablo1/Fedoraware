@@ -30,7 +30,7 @@ MAKE_HOOK(C_TFPlayer_Resource_GetPlayerConnectionState, g_Pattern.Find(L"client.
 MAKE_HOOK(C_PlayerResource_GetTeamColor, g_Pattern.Find(L"client.dll", L"55 8B EC 8B 45 08 83 F8 1F"), unsigned char*, __fastcall,
     void* ecx, void* edx, int index)
 {
-    if (index < 0 || index > I::EngineClient->GetMaxClients()|| !iCurPlayer || !Vars::Visuals::ScoreboardColours.Value ||
+    if (index < 0 || index > 31 || !iCurPlayer || !Vars::Visuals::ScoreboardColours.Value ||
         Vars::Visuals::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot()) {
         return Hook.Original<FN>()(ecx, edx, index);
     }
