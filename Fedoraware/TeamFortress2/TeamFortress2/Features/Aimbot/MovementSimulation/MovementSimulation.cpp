@@ -1,7 +1,5 @@
 #include "MovementSimulation.h"
 #include "../../Backtrack/Backtrack.h"
-#pragma warning (disable : 4018)
-#pragma warning (disable : 4552)
 
 //we'll use this to set current player's command, without it CGameMovement::CheckInterval will try to access a nullptr
 static CUserCmd DummyCmd = {};
