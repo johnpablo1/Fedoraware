@@ -179,7 +179,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			}
 		}
 
-		Color_t drawColor = Utils::GetTeamColor(Player->GetTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
+		Color_t drawColor = Utils::GetEntityDrawColor(Player, Vars::ESP::Main::EnableTeamEnemyColors.Value);
 
 		int x = 0, y = 0, w = 0, h = 0;
 		Vec3 vTrans[8];
@@ -445,7 +445,7 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 					weaponoffset += Vars::Fonts::FONT_ESP::nTall.Value;
 
 					const int Distance = round(flDistance / 52.49);
-					g_Draw.String(FONT_ESP, x + (w / 2), y + h + weaponoffset + offset, drawColor, ALIGN_CENTERHORIZONTAL, L"%dM", Distance);
+					g_Draw.String(FONT_ESP, x + (w / 2), y + h + weaponoffset + offset, Utils::GetEntityDrawColor(Player, Vars::ESP::Main::EnableTeamEnemyColors.Value), ALIGN_CENTERHORIZONTAL, L"%dM", Distance);
 				}
 			}
 
@@ -806,7 +806,7 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 
 		const auto& building = reinterpret_cast<CBaseObject*>(pBuilding);
 
-		Color_t drawColor = Utils::GetTeamColor(building->GetTeamNum(), Vars::ESP::Main::EnableTeamEnemyColors.Value);
+		Color_t drawColor = Utils::GetEntityDrawColor(building, Vars::ESP::Main::EnableTeamEnemyColors.Value);
 
 		int x = 0, y = 0, w = 0, h = 0;
 		Vec3 vTrans[8];
