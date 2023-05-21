@@ -513,15 +513,6 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 						}
 					}
 				}
-
-				if (Vars::ESP::Players::Conditions::Dormant.Value)
-				{
-					if (Player->GetDormant())
-					{
-						g_Draw.String(FONT_ESP_COND, nTextX, y + nTextOffset, { 128, 128, 128, 255 }, ALIGN_DEFAULT, "DORMANT");
-						nTextOffset += g_Draw.m_vecFonts[FONT_ESP_COND].nTall;
-					}
-				}
 								
 				const int nCond = Player->GetCond();
 				const int nCondEx = Player->GetCondEx();
