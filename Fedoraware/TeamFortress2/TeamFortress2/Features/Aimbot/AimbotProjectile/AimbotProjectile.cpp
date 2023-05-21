@@ -30,7 +30,7 @@ bool CAimbotProjectile::GetProjectileInfo(CBaseCombatWeapon* pWeapon, Projectile
 		case TF_WEAPON_PARTICLE_CANNON:
 		{
 			IsBoosted = true;
-			out = { Utils::ATTRIB_HOOK_FLOAT(1100.0f, "mult_projectile_speed", pWeapon), 0.0f };
+			out = { Utils::ATTRIB_HOOK_FLOAT(1100.0f, "mult_projectile_speed", pWeapon, 0, 1), 0.0f };
 			break;
 		}
 
@@ -40,7 +40,7 @@ bool CAimbotProjectile::GetProjectileInfo(CBaseCombatWeapon* pWeapon, Projectile
 			float speed = isLochnLoad ? 1490.0f : 1200.0f;
 
 			IsBoosted = true;
-			out = { speed, 0.5f, Utils::ATTRIB_HOOK_FLOAT(3.0f, "fuse_mult", pWeapon) };
+			out = { speed, 0.5f, Utils::ATTRIB_HOOK_FLOAT(3.0f, "fuse_mult", pWeapon, 0, 1) };
 			break;
 
 		}
@@ -48,8 +48,8 @@ bool CAimbotProjectile::GetProjectileInfo(CBaseCombatWeapon* pWeapon, Projectile
 		case TF_WEAPON_PIPEBOMBLAUNCHER:
 		{
 			float charge = (I::GlobalVars->curtime - pWeapon->GetChargeBeginTime());
-			float speed = Math::RemapValClamped(charge, 0.0f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 900.0f, 2400.0f);
-			float grav_mod = Math::RemapValClamped(charge, 0.0f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.5f, 0.1f);
+			float speed = Math::RemapValClamped(charge, 0.0f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon, 0, 1), 900.0f, 2400.0f);
+			float grav_mod = Math::RemapValClamped(charge, 0.0f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon, 0, 1), 0.5f, 0.1f);
 
 			out = { speed, grav_mod };
 			break;
