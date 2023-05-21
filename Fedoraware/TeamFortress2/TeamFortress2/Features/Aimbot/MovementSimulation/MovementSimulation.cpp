@@ -296,21 +296,8 @@ bool CMovementSimulation::StrafePrediction()
 			return false;
 		}
 
-		auto get_velocity_degree = [](float velocity)
-		{
-			auto tmp = RAD2DEG(atan(30.0f / velocity));
+		const float flMaxDelta = (60.f / fmaxf((float)iSamples / 2.f, 1.f));
 
-			#define CheckIfNonValidNumber(x) (fpclassify(x) == FP_INFINITE || fpclassify(x) == FP_NAN || fpclassify(x) == FP_SUBNORMAL)
-			if (CheckIfNonValidNumber(tmp) || tmp > 90.0f)
-				return 90.0f;
-
-			else if (tmp < 0.0f)
-				return 0.0f;
-			else
-				return tmp;
-		};
-
-		const float flMaxDelta = (get_velocity_degree(flAverageYaw) / fmaxf((float)iSamples / 2.f, 1.f));
 
 		if (fabsf(flAverageYaw) > flMaxDelta) {
 			m_Velocities[m_pPlayer->GetIndex()].clear();
