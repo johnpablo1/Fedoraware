@@ -231,10 +231,10 @@ namespace Vars
 			{
 				inline CVar<bool> Enabled{ false };
 				inline CVar<bool> Buffs{ true };
-				inline CVar<bool> Debuffs{ true };
+				inline CVar<bool> Debuffs{ false };
 				inline CVar<bool> Other{ false };
 				inline CVar<bool> LagComp{ false };
-				inline CVar<bool> Ping{ true };
+				inline CVar<bool> Ping{ false };
 				inline CVar<bool> KD{ false };
 			}
 		}
