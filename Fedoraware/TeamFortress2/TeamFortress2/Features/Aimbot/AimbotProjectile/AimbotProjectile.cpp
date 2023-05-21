@@ -479,16 +479,6 @@ std::optional<Vec3> CAimbotProjectile::GetAimPos(CBaseEntity* pLocal, CBaseEntit
 	if (kBounce.Down())	//	player demands we aim at feet (fetishist ngl)
 	{ iAimMethod = 2; }
 
-	static KeyHelper kCritHack{ &Vars::CritHack::CritKey.Value };
-
-	if (G::CurItemDefIndex == TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT) 
-	{
-		if (kCritHack.Down() || pLocal->IsCritBoosted()) //force baim with direct hit if critting
-		{
-			iAimMethod = 1;
-		}
-	}
-
 	while (iAimMethod == 3)
 	{
 		if (pEntity->OnSolid() && Vars::Aimbot::Projectile::FeetAimIfOnGround.Value) {
