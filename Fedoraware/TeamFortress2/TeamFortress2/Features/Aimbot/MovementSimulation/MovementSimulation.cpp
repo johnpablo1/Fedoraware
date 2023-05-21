@@ -142,12 +142,12 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer)
 		//for some reason if xy vel is zero it doesn't predict
 		if (fabsf(pPlayer->m_vecVelocity().x) < 0.01f)
 		{
-			pPlayer->m_vecVelocity().x = 0.015f;
+			pPlayer->m_vecVelocity().x = 0.011f;
 		}
 
 		if (fabsf(pPlayer->m_vecVelocity().y) < 0.01f)
 		{
-			pPlayer->m_vecVelocity().y = 0.015f;
+			pPlayer->m_vecVelocity().y = 0.011f;
 		}
 	}
 
@@ -185,7 +185,7 @@ void CMovementSimulation::FillVelocities()
 		for (const auto& pEntity : g_EntityCache.GetGroup(EGroupType::PLAYERS_ALL))
 		{
 			const int iEntIndex = pEntity->GetIndex();
-			if (!pEntity->IsAlive() || pEntity->GetDormant() || pEntity->GetVelocity().IsZero())
+			if (!pEntity->IsAlive() || pEntity->GetDormant() || pEntity->GetVelocity().IsZero()) 
 			{
 				m_Velocities[iEntIndex].clear();
 				continue;
@@ -264,12 +264,14 @@ bool CMovementSimulation::StrafePrediction()
 		const auto& mVelocityRecord = m_Velocities[iEntIndex];
 
 		if (static_cast<int>(mVelocityRecord.size()) < 1)
-		{ return false; }
+		{
+			return false;
+		}
 
 		const int iSamples = fmin(Vars::Aimbot::Projectile::StrafePredictionSamples.Value, mVelocityRecord.size());
 		if (!iSamples) { return false; }
 
-		flInitialYaw = m_MoveData.m_vecViewAngles.y;		//Math::VelocityToAngles(m_MoveData.m_vecVelocity).y;
+		flInitialYaw = m_MoveData.m_vecViewAngles.y; //Math::VelocityToAngles(m_MoveData.m_vecVelocity).y;
 		float flCompareYaw = flInitialYaw;
 
 		int i = 0;
@@ -320,8 +322,8 @@ bool CMovementSimulation::StrafePrediction()
 			Utils::ConLog("MovementSimulation", tfm::format("flAverageYaw calculated to %f", flAverageYaw).c_str(), { 83, 255, 83, 255 });
 		}
 	}
+
 	if (flAverageYaw == 0.f) { return false; }	//	fix
-	
 
 	flInitialYaw += flAverageYaw;
 	m_MoveData.m_vecViewAngles.y = flInitialYaw;
@@ -331,7 +333,7 @@ bool CMovementSimulation::StrafePrediction()
 
 void CMovementSimulation::RunTick(CMoveData& moveDataOut, Vec3& m_vecAbsOrigin)
 {
-	if (!I::CTFGameMovement || !m_pPlayer || bDontPredict)
+	if (!I::CTFGameMovement || !m_pPlayer || bDontPredict) 
 	{
 		return;
 	}
