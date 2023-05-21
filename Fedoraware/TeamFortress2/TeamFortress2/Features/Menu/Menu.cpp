@@ -555,8 +555,8 @@ void CMenu::MenuVisuals()
 								   { &Vars::ESP::Players::Conditions::Buffs.Value, &Vars::ESP::Players::Conditions::Debuffs.Value, &Vars::ESP::Players::Conditions::Other.Value, 
 									 &Vars::ESP::Players::Conditions::LagComp.Value, &Vars::ESP::Players::Conditions::KD.Value, &Vars::ESP::Players::Conditions::Ping.Value },
 								     "Condition List");
-						ColorPickerL("Condition colour", Colors::Cond);
 					}
+					ColorPickerL("Condition colour", Colors::Cond);
 					WToggle("Priority Text", &Vars::ESP::Players::PriorityText.Value); HelpMarker("Will show you what priority the enemy is. (Attempts to automatically mark cheaters.)");
 					WCombo("Box###PlayerBoxESP", &Vars::ESP::Players::Box.Value, { "Off", "Bounding", "Cornered", "3D" }); HelpMarker("What sort of box to draw on players");
 					WCombo("Skeleton###PlayerSkellington", &Vars::ESP::Players::Bones.Value, { "Off", "Custom colour", "Health" }); HelpMarker("Will draw the bone structure of the player");
