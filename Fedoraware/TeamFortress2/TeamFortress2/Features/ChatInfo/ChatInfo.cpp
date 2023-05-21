@@ -59,7 +59,7 @@ void CChatInfo::Event(CGameEvent* pEvent, const FNV1A_t uNameHash)
 
 				if (Vars::Visuals::ChatInfoChat.Value)
 				{
-					const std::string changeClassString = tfm::format("%s %s %s is now a %s", Vars::Menu::MenuAccent.to_hex(), Vars::Menu::CheatPrefix.c_str(), pi.name, Utils::GetClassByIndex(pEvent->GetInt("class")));
+					const std::string changeClassString = tfm::format("%s %s %s is now a %s", Vars::Menu::Colors::MenuAccent.to_hex(), Vars::Menu::CheatPrefix.c_str(), pi.name, Utils::GetClassByIndex(pEvent->GetInt("class")));
 					I::ClientModeShared->m_pChatElement->ChatPrintf(0, changeClassString.c_str());
 				}
 			}
@@ -87,7 +87,7 @@ void CChatInfo::Event(CGameEvent* pEvent, const FNV1A_t uNameHash)
 				}
 				if (votingOptions & VoteChat) // chat
 				{
-					I::ClientModeShared->m_pChatElement->ChatPrintf(0, tfm::format("%s %s \x3%s %svoted %s%s", Vars::Menu::MenuAccent.to_hex(), Vars::Menu::CheatPrefix.c_str(), pi.name, yellow, bVotedYes ? green : red, bVotedYes ? "Yes" : "No").c_str());
+					I::ClientModeShared->m_pChatElement->ChatPrintf(0, tfm::format("%s %s \x3%s %svoted %s%s", Vars::Menu::Colors::MenuAccent.to_hex(), Vars::Menu::CheatPrefix.c_str(), pi.name, (Vars::Visuals::ChatInfoGrayScale.Value ? gsyellow : yellow), bVotedYes ? (Vars::Visuals::ChatInfoGrayScale.Value ? gsgreen : green) : (Vars::Visuals::ChatInfoGrayScale.Value ? gsred : red), bVotedYes ? "Yes" : "No").c_str());
 				}
 				if (votingOptions & VoteParty) // party
 				{
@@ -128,7 +128,7 @@ void CChatInfo::Event(CGameEvent* pEvent, const FNV1A_t uNameHash)
 				I::VGuiSurface->GetTextSize(g_Draw.m_vecFonts[FONT_ESP_COND].dwFont, wcattackString,
 											attackStringW, attackStringH);
 				const std::string chatAttackString(
-					Vars::Menu::MenuAccent.to_hex() + Vars::Menu::CheatPrefix + yellow + " You hit \x3" + pi.name + yellow + " for " + red + std::to_string(nDamage) + " damage " + (bCrit ? green + "(crit) " : "") + yellow + "(" +
+					Vars::Menu::Colors::MenuAccent.to_hex() + Vars::Menu::CheatPrefix + (Vars::Visuals::ChatInfoGrayScale.Value ? gsyellow : yellow) + " You hit \x3" + pi.name + (Vars::Visuals::ChatInfoGrayScale.Value ? gsyellow : yellow) + " for " + (Vars::Visuals::ChatInfoGrayScale.Value ? gsred : red) + std::to_string(nDamage) + " damage " + (bCrit ? (Vars::Visuals::ChatInfoGrayScale.Value ? gsgreen : green) + "(crit) " : "") + (Vars::Visuals::ChatInfoGrayScale.Value ? gsyellow : yellow) + "(" +
 					std::to_string(nHealth) + "/" + std::to_string(maxHealth) + ")");
 
 				if (Vars::Visuals::DamageLoggerChat.Value)
@@ -219,6 +219,19 @@ void CChatInfo::UserMessage(UserMessageType type, bf_read& msgData)
 					if (votingOptions & VoteParty)
 					{
 						I::EngineClient->ClientCmd_Unrestricted(tfm::format("tf_party_chat \"%s\"", chosenLine).c_str());
+					}
+
+					// Auto Vote
+					if (Vars::Misc::AutoVote.Value && bSameTeam && target != I::EngineClient->GetLocalPlayer())
+					{
+						if (G::IsIgnored(infoTarget.friendsID) || g_EntityCache.IsFriend(target))
+						{
+							I::EngineClient->ClientCmd_Unrestricted(tfm::format("vote %d option2", voteID).c_str()); //f2 on ignored and steam friends
+						}
+						else
+						{
+							I::EngineClient->ClientCmd_Unrestricted(tfm::format("vote %d option1", voteID).c_str()); //f1 on everyone else
+						}
 					}
 				}
 			}

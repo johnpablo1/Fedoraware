@@ -733,6 +733,10 @@ bool CDMEChams::Render(const DrawModelState_t& pState, const ModelRenderInfo_t& 
 
 				if (pOwner && pOwner->IsPlayer() && pOwner != pLocal && pOwner->GetTeamNum() == pLocal->GetTeamNum() && pLocal->IsAlive())
 				{
+					if (Vars::Chams::Players::FadeoutTeammates.Value) {
+						alpha = Math::RemapValClamped(pLocal->GetWorldSpaceCenter().DistTo(pEntity->GetWorldSpaceCenter()), 450.f, 100.f, Color::TOFLOAT(chams.colour.a), 0.0f);
+					}
+
 					if (alpha < 0.01f)
 					{	//dont draw if we are too close
 						return true;

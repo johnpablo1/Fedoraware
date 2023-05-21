@@ -441,7 +441,7 @@ void CGlowEffect::Render()
 
 			for (const auto& GlowEntity : m_vecGlowEntities)
 			{
-				I::RenderView->SetBlend(GlowEntity.m_flAlpha);
+				I::RenderView->SetBlend(Vars::Glow::Main::PulseGlow.Value ? sin(I::GlobalVars->curtime * 5) * 0.5f + 0.51f : GlowEntity.m_flAlpha);
 				I::RenderView->SetColorModulation(Color::TOFLOAT(GlowEntity.m_Color.r),
 				                                            Color::TOFLOAT(GlowEntity.m_Color.g),
 				                                            Color::TOFLOAT(GlowEntity.m_Color.b));

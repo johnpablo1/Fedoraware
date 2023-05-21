@@ -199,6 +199,11 @@ void CMovementSimulation::FillVelocities()
 
 			const Vec3 vVelocity = pEntity->GetVelocity();
 			m_Velocities[iEntIndex].push_front(vVelocity);
+
+			while (m_Velocities[iEntIndex].size() > Vars::Aimbot::Projectile::StrafePredictionSamples.Value)
+			{
+				m_Velocities[iEntIndex].pop_back();
+			}
 		}
 	}
 	else
@@ -206,6 +211,32 @@ void CMovementSimulation::FillVelocities()
 		m_Velocities.clear();
 	}
 }
+
+
+// This hook lets you freeze where your camera is in place, so you can do +right and +forward with a bot to make it walk in a circle
+// Credits: spook953
+//#include "../../../Hooks/Hooks.h"
+//
+//MAKE_HOOK(C_BasePlayer_CalcPlayerView, g_Pattern.Find(L"client.dll", L"55 8B EC 83 EC 18 53 56 8B F1 8B 0D ? ? ? ? 57 8B 01 8B 40 38 FF D0 84 C0 75 0B 8B 0D ? ? ? ? 8B 01 FF 50 4C 8B 06 8D 4D E8 51 8B CE FF 90"), void, __fastcall,
+//		  void* ecx, void* edx, Vector& eyeOrigin, Vector& eyeAngles, float& fov)
+//{
+//	static Vector vFrozenOrigin{};
+//	static Vector vFrozenAngle{};
+//	static bool bFreezePlayerView = false;
+//	if (GetAsyncKeyState(VK_R) & 0x1)
+//	{
+//		vFrozenOrigin = eyeOrigin;
+//		vFrozenAngle = eyeAngles;
+//		bFreezePlayerView = !bFreezePlayerView;
+//	}
+//
+//	if (bFreezePlayerView)
+//	{
+//		return Hook.Original<FN>()(ecx, edx, vFrozenOrigin, vFrozenAngle, fov);
+//	}
+//
+//	Hook.Original<FN>()(ecx, edx, eyeOrigin, eyeAngles, fov);
+//}
 
 bool CMovementSimulation::StrafePrediction()
 {
@@ -236,13 +267,15 @@ bool CMovementSimulation::StrafePrediction()
 
 		if (static_cast<int>(mVelocityRecord.size()) < 1)
 		{ return false; }
-		if (mVelocityRecord.empty()) { return false; }
+
+		const int iSamples = fmin(Vars::Aimbot::Projectile::StrafePredictionSamples.Value, mVelocityRecord.size());
+		if (!iSamples) { return false; }
 
 		flInitialYaw = m_MoveData.m_vecViewAngles.y;		//Math::VelocityToAngles(m_MoveData.m_vecVelocity).y;
 		float flCompareYaw = flInitialYaw;
 
 		int i = 0;
-		for (; i < mVelocityRecord.size(); i++)
+		for (; i < iSamples; i++)
 		{
 			const float flRecordYaw = Math::VelocityToAngles(mVelocityRecord.at(i)).y;
 
@@ -278,7 +311,7 @@ bool CMovementSimulation::StrafePrediction()
 				return tmp;
 		};
 
-		const float flMaxDelta = (get_velocity_degree(flAverageYaw) / fmaxf((float)mVelocityRecord.size(), 2.f));
+		const float flMaxDelta = (get_velocity_degree(flAverageYaw) / fmaxf((float)iSamples, 2.f));
 
 		if (fabsf(flAverageYaw) > flMaxDelta) {
 			m_Velocities[m_pPlayer->GetIndex()].clear();

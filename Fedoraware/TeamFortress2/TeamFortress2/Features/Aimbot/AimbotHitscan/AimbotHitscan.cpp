@@ -89,6 +89,8 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 	const Vec3 vLocalPos = pLocal->GetShootPos();
 	const Vec3 vLocalAngles = I::EngineClient->GetViewAngles();
 
+	const bool respectFOV = (sortMethod == ESortMethod::FOV) || (Vars::Aimbot::Hitscan::RespectFOV.Value);
+
 	// Players
 	if (Vars::Aimbot::Global::AimAt.Value & (ToAimAt::PLAYER))
 	{
@@ -159,7 +161,8 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
-			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
+			// Should we respect the Aim FOV?
+			if (respectFOV && flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
 			{
 				continue;
 			}
@@ -195,7 +198,8 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
-			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
+			// Should we respect the Aim FOV?
+			if (respectFOV && flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
 			{
 				continue;
 			}
@@ -229,7 +233,8 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
-			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
+			// Should we respect the Aim FOV?
+			if (respectFOV && flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
 			{
 				continue;
 			}
@@ -249,7 +254,8 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
-			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
+			// Should we respect the Aim FOV?
+			if (respectFOV && flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
 			{
 				continue;
 			}
@@ -272,7 +278,8 @@ std::vector<Target_t> CAimbotHitscan::GetTargets(CBaseEntity* pLocal, CBaseComba
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 			const float flDistTo = sortMethod == ESortMethod::DISTANCE ? vLocalPos.DistTo(vPos) : 0.0f;
 
-			if (flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
+			// Should we respect the Aim FOV?
+			if (respectFOV && flFOVTo > Vars::Aimbot::Hitscan::AimFOV.Value)
 			{
 				continue;
 			}
@@ -513,7 +520,11 @@ void CAimbotHitscan::Aim(CUserCmd* pCmd, Vec3& vAngle)
 	vAngle -= G::PunchAngles;
 	Math::ClampAngles(vAngle);
 
-	switch (Vars::Aimbot::Hitscan::AimMethod.Value)
+	const int nAimMethod = (Vars::Aimbot::Hitscan::SpectatedSmooth.Value && G::LocalSpectated)
+		? 1
+		: Vars::Aimbot::Hitscan::AimMethod.Value;
+
+	switch (nAimMethod)
 	{
 		case 0: //Plain
 		{
@@ -675,7 +686,11 @@ bool CAimbotHitscan::ShouldFire(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon,
 		default: break;
 	}
 
-	if (Vars::Aimbot::Hitscan::AimMethod.Value == 1)
+	const int nAimMethod = (Vars::Aimbot::Hitscan::SpectatedSmooth.Value && G::LocalSpectated)
+		? 1
+		: Vars::Aimbot::Hitscan::AimMethod.Value;
+
+	if (nAimMethod == 1)
 	{
 		Vec3 vForward = {};
 		Math::AngleVectors(pCmd->viewangles, &vForward);
@@ -794,6 +809,12 @@ void CAimbotHitscan::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUserC
 		G::CurrentTargetIdx = target.m_pEntity->GetIndex();
 		G::HitscanRunning = true;
 		G::HitscanSilentActive = Vars::Aimbot::Hitscan::AimMethod.Value == 2;
+
+		// Smooth if spectated
+		if (Vars::Aimbot::Hitscan::SpectatedSmooth.Value && G::LocalSpectated)
+		{
+			G::HitscanSilentActive = false;
+		}
 
 		if (G::HitscanSilentActive)
 		{

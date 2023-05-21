@@ -1,6 +1,7 @@
 #include "../Hooks.h"
 
 #include "../../SDK/Includes/icons.h"
+#include "../../Features/SpyWarning/SpyWarning.h"
 #include "../../Features/PlayerArrows/PlayerArrows.h"
 #include "../../Features/ESP/ESP.h"
 #include "../../Features/Misc/Misc.h"
@@ -10,10 +11,12 @@
 #include "../../Features/Menu/Menu.h"
 #include "../../Features/Menu/SpectatorList/SpectatorList.h"
 #include "../../Features/Radar/Radar.h"
+#include "../../Features/Followbot/Followbot.h"
 #include "../../Features/AutoQueue/AutoQueue.h"
 #include "../../Features/Chams/DMEChams.h"
 #include "../../Features/Menu/MaterialEditor/MaterialEditor.h"
 #include "../../Features/Menu/Playerlist/Playerlist.h"
+#include "../../Features/LuaEngine/Callbacks/LuaCallbacks.h"
 #include "../../Features/AntiHack/AntiAim.h"
 #include "../../Features/TickHandler/TickHandler.h"
 
@@ -135,6 +138,7 @@ bInitIcons = true;
 					#else
 						g_Draw.String(FONT_MENU, 5, g_ScreenSize.h - 2 - Vars::Fonts::FONT_MENU::nTall.Value, { 200, 200, 200, 255 }, ALIGN_DEFAULT, L"Build of %hs", __DATE__);
 					#endif
+						F::Visuals.DrawDVD();
 						if (Vars::Visuals::MenuCelebration.Value)
 						{
 							if (curCalTime->tm_mon == 11 && curCalTime->tm_mday == 25)
@@ -150,12 +154,18 @@ bInitIcons = true;
 				}
 			}
 
+			if (I::EngineClient->IsInGame())
+			{
+				F::RSChat.Draw();
+			}
+
 			if (CBaseEntity* pLocal = g_EntityCache.GetLocal())
 			{
 				if (I::EngineClient->IsTakingScreenshot() && Vars::Visuals::CleanScreenshots.Value) { return FinishDrawing(I::VGuiSurface); }
 				F::Visuals.DrawAntiAim(pLocal);
 				F::Visuals.DrawTickbaseInfo(pLocal);
 				F::Visuals.DrawAimbotFOV(pLocal);
+				F::Visuals.ScopeLines(pLocal);
 				F::Visuals.DrawDebugInfo(pLocal);
 				F::Visuals.DrawOnScreenConditions(pLocal);
 				F::Visuals.DrawOnScreenPing(pLocal);
@@ -163,15 +173,22 @@ bInitIcons = true;
 				F::AntiAim.Draw(pLocal);
 			}
 
+			F::Visuals.DrawPredictionLine();
 			F::ESP.Run();
 			F::Visuals.PickupTimers();
+			F::SpyWarning.Run();
 			F::PlayerArrows.Run();
 			F::AutoQueue.Run();
+			F::Followbot.Draw();
 			F::SpectatorList.Run();
 			F::CritHack.Draw();
 			F::Radar.Run();
 			F::PlayerList.Run();
 			F::Notifications.Think();
+			F::Visuals.SetVisionFlags();
+
+			// Run Lua callbacks
+			F::LuaCallbacks.ByType("Draw");
 		}
 		FinishDrawing(I::VGuiSurface);
 	}

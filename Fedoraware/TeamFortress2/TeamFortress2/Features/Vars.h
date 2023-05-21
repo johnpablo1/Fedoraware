@@ -19,12 +19,16 @@ namespace Vars
 		inline bool ModernDesign = false;
 		inline bool ShowPlayerlist = false;
 		inline bool ShowKeybinds = false;
+
+		inline CVar<bool> ShowDVD{ false };
+		inline CVar<bool> Vignette{ true };
+		inline CVar<bool> CloseOnUnfocus{ true };
 		inline CVar<int> MenuKey{ 0 };
 
-//		namespace Colors
-//		{
+		namespace Colors
+		{
 			inline Color_t MenuAccent = { 255, 101, 101, 255 };
-//		} why have a namespace for one var?
+		}
 	}
 
 	namespace CritHack
@@ -35,12 +39,14 @@ namespace Vars
 		inline CVar<bool> AvoidRandom{ false };
 		inline CVar<bool> AlwaysMelee{ false };
 		inline CVar<int> CritKey{ VK_SHIFT };
+		inline CVar<bool> AutoMeleeCrit{ false };
 	}
 
 	namespace Backtrack
 	{
 		inline CVar<bool> Enabled{ false };
 		inline CVar<int> Latency{ 0 };
+
 
 		namespace BtChams
 		{
@@ -78,6 +84,7 @@ namespace Vars
 			inline CVar<float> AimFOV{ 19.f };
 			inline CVar<int> SortMethod{ 0 }; //0 - FOV,		1 - Distance
 			inline CVar<int> BackTrackMethod{ 0 };
+			inline CVar<bool> RespectFOV{ true };
 			inline CVar<int> AimMethod{ 2 }; //0 - Normal,	1 - Smooth, 2 - Silent
 			inline CVar<int> AimHitbox{ 2 }; //0 - Head,		1 - Body,	2 - Auto
 			inline CVar<int> ScanHitboxes{ 0b00111 }; // {legs, arms, body, pelvis, head}
@@ -90,6 +97,7 @@ namespace Vars
 			inline CVar<bool> ScanBuildings{ false };
 			inline CVar<bool> WaitForHeadshot{ false };
 			inline CVar<bool> WaitForCharge{ false };
+			inline CVar<bool> SpectatedSmooth{ false };
 			inline CVar<bool> ScopedOnly{ false };
 			inline CVar<bool> AutoScope{ false };
 			inline CVar<bool> AutoRev{ false };
@@ -101,30 +109,40 @@ namespace Vars
 			inline CVar<bool> Active{ false };
 			inline CVar<float> AimFOV{ 26.f };
 			inline CVar<int> SortMethod{ 0 }; //0 - FOV,		1 - Distance
+			inline CVar<bool> RespectFOV{ true };
 			inline CVar<int> AimMethod{ 1 }; //0 - Normal,	1 - Silent
 			inline CVar<int> AimPosition{ 3 }; // 0/head, 1/body, 2/feet, 3/auto
-			inline CVar<float> ScanScale{ 0.78f }; // how to scale the points. 0.78 is a good number, huntsman bugs at anything below 0.76
+			inline CVar<int> VisTestPoints{ 15 }; //how many points are we allowed to vis test before we stop scanning.
+			inline CVar<int> ScanPoints{ 15 }; //how many "visible points" need to be reached before we stop searching.
+			inline CVar<float> ScanScale{ 0.95f }; // how to scale the points.
 			inline CVar<int> AllowedHitboxes{ 0b000 }; // 111, Feet, Body, Head.
 			inline CVar<bool> FeetAimIfOnGround{ false };
 			inline CVar<int> BounceKey{ 0x0 };
 			inline CVar<bool> SplashPrediction{ false };
+			inline CVar<int> MinSplashPredictionDistance{ 0 };
+			inline CVar<int> MaxSplashPredictionDistance{ 10000 };
 			inline Color_t PredictionColor{ 0, 255, 0, 255 };
 			inline CVar<float> PredictionTime{ 2.0f };
-//			inline CVar<bool> NoSpread{ false }; i dont even think this works???
+			inline CVar<bool> PredictObscured{ false };
+			inline CVar<bool> NoSpread{ false };
 			inline CVar<bool> ChargeLooseCannon{ false };
 			inline CVar<bool> StrafePredictionGround{ false };
 			inline CVar<bool> StrafePredictionAir{ false };
+			inline CVar<int> StrafePredictionSamples{ 10 };
 			inline CVar<int> StrafePredictionMaxDistance{ 1000 };
 			inline CVar<int> StrafePredictionMinDifference{ 10 };
+			inline CVar<bool> WaitForHit{ false };
 		}
 
 		namespace Melee
 		{
 			inline CVar<bool> Active{ false };
 			inline CVar<float> AimFOV{ 180.f };
-			inline CVar<int> SortMethod{ 1 }; //0 - FOV, 1 - Distance
+			inline CVar<int> SortMethod{ 1 }; //0 - FOV,		1 - Distance
+			inline CVar<bool> RespectFOV{ false };
 			inline CVar<int> AimMethod{ 2 }; //0 - Normal,	1 - Smooth, 2 - Silent
 			inline CVar<int> SmoothingAmount{ 8 };
+			inline CVar<bool> RangeCheck{ false };
 			inline CVar<bool> PredictSwing{ false };
 			inline CVar<bool> WhipTeam{ false };
 		}
@@ -198,21 +216,26 @@ namespace Vars
 		namespace Main
 		{
 			inline CVar<bool> Active{ false };
+			inline CVar<bool> AnimatedHealthBars{ true }; //credits to 14
 			inline CVar<bool> EnableTeamEnemyColors{ false };
+			inline CVar<bool> DistanceToAlpha{ false };
 			inline CVar<bool> DormantSoundESP{ false };
 			inline CVar<float> DormantTime{ 1.f };
+			inline CVar<int> DormantDist{ 1000 };
+			inline CVar<int> NetworkedDist{ 2000 };
 		}
+
 
 		namespace Players
 		{
 			inline CVar<bool> Active{ false };
-			inline CVar<bool> IgnoreLocal{ true };
-			inline CVar<bool> IgnoreTeammates{ true };
-			inline CVar<bool> IgnoreFriends{ false };
-			inline CVar<bool> IgnoreCloaked{ false }; 
+			inline CVar<bool> ShowLocal{ false };
+			inline CVar<int> IgnoreTeammates{ 0 }; //0 - OFF, 1 - All, 2 - Keep Friends
+			inline CVar<int> IgnoreCloaked{ 0 }; //0 - OFF, 1 - All, 2 - Enemies Only
 			inline CVar<bool> Name{ false };
 			inline CVar<bool> NameCustom{ false };
 			inline Color_t NameColor{ 255, 255, 255, 255 };
+			inline CVar<bool> NameBox{ false };
 			inline CVar<int> Uber{ 0 }; //0 - Off, 1 - Text, 2 - Bar, 3 - Both
 			inline CVar<int> Class{ 0 }; // 0 - Off, 1 - Icon, 2 - Text, 3 - Both
 			inline CVar<bool> WeaponIcon{ false };
@@ -224,6 +247,11 @@ namespace Vars
 			inline CVar<int> HealthBarStyle{ 0 }; // 0 - gradient, 1 - old
 			inline CVar<int> Box{ 0 }; //0 - OFF, 1 - Simple, 2 - Corners
 			inline CVar<int> Bones{ 0 };
+			inline CVar<bool> GUID{ false };
+			inline CVar<bool> Choked{ false };
+			inline CVar<bool> Lines{ false };
+			inline CVar<bool> Dlights{ false };
+			inline CVar<float> DlightRadius{ 200.0f };
 			inline CVar<float> Alpha{ 1.0f };
 			inline CVar<bool> PriorityText{ false };
 			inline CVar<bool> SniperSightlines{ false };
@@ -236,13 +264,19 @@ namespace Vars
 			inline CVar<bool> Name{ false };
 			inline CVar<bool> NameCustom{ false };
 			inline Color_t NameColor{ 255, 255, 255, 255 };
+			inline CVar<bool> NameBox{ false };
 			inline CVar<bool> Health{ false };
 			inline CVar<bool> Owner{ false };
 			inline CVar<bool> Level{ false };
 			inline CVar<bool> Distance{ false };
 			inline CVar<bool> Cond{ false };
 			inline CVar<bool> HealthBar{ false };
+			inline CVar<bool> TeleExitDir{ false };
+			inline Color_t TeleExitDirColor{ 255, 255, 255, 255 };
+			inline CVar<bool> Lines{ false };
 			inline CVar<int> Box{ 0 }; //0 - OFF, 1 - Simple, 2 - Corners
+			inline CVar<bool> Dlights{ false };
+			inline CVar<float> DlightRadius{ 200.0f };
 			inline CVar<float> Alpha{ 1.0f };
 		}
 
@@ -286,6 +320,7 @@ namespace Vars
 			inline CVar<bool> Active{ false };
 			inline CVar<bool> Wearables{ false };
 			inline CVar<bool> Weapons{ false };
+			inline CVar<bool> FadeoutTeammates{ false };
 			inline CVar<bool> EnemyOnly{ true };
 
 			// {ignorez, material, overlay type (0 = off), active}
@@ -360,6 +395,7 @@ namespace Vars
 			inline CVar<bool> Active{ false };
 			inline CVar<int> Type{ 0 };	//	blur, stencil, fps stencil, wireframe
 			inline CVar<int> Scale{ 5 };
+			inline CVar<bool> PulseGlow{ false }; //fuck cave johnson (the man who asked for this)
 		}
 
 		namespace Players
@@ -461,18 +497,37 @@ namespace Vars
 		inline CVar<bool> RemoveMOTD{ false };
 		inline CVar<bool> RemoveScreenEffects{ false };
 		inline CVar<bool> RemoveScreenOverlays{ false };
+		//inline CVar<bool> RemoveForcedConvars{ false };
 		inline CVar<bool> RemoveConvarQueries{ false };
 		inline CVar<bool> RemoveDSP{ false };
+		inline CVar<int> VisualOverlay{ false };
 		inline CVar<bool> PreventForcedAngles{ false };
+		inline CVar<bool> ScopeLines{ false };
 		inline CVar<bool> PickupTimers{ false };
 		inline CVar<bool> RemoveZoom{ false };
 		inline CVar<bool> RemovePunch{ false };
 		inline CVar<bool> CrosshairAimPos{ false };
 		inline CVar<bool> ChatInfoText{ false };
 		inline CVar<bool> ChatInfoChat{ false };
+		inline CVar<bool> ChatInfoGrayScale{ false };
 		inline CVar<bool> OutOfFOVArrowsOutline{ false };
 		inline CVar<float> FovArrowsDist{ 0.15f };
 		inline CVar<int> SpectatorList{ 2 }; //0 - Off, 1 - Default, 2 - Classic, 3 - Classic Avatars
+
+		inline CVar<int> FreecamKey{ 0 };
+		inline CVar<float> FreecamSpeed{ 10.f };
+
+		inline CVar<int> CameraMode{ 0 };
+		inline CVar<float> CameraFOV{ 90.f };
+
+		inline CVar<bool> SpyWarning{ false };
+		inline CVar<bool> SpyWarningAnnounce{ false };
+		inline CVar<int> SpyWarningStyle{ 0 }; //0 - Indicator, 1 - Flash
+		inline CVar<bool> SpyWarningVisibleOnly{ false };
+		inline CVar<bool> SpyWarningIgnoreFriends{ false };
+
+		inline CVar<bool> Snow{ false };
+		inline CVar<bool> ToolTips{ false };
 
 		inline CVar<bool> ThirdPerson{ false };
 		inline CVar<int> ThirdPersonKey{ VK_B };
@@ -486,6 +541,7 @@ namespace Vars
 		inline CVar<bool> ThirdpersonOffsetWithArrows{ false };
 		inline CVar<int> ThirdpersonArrowOffsetKey{ VK_F };
 		inline CVar<bool> ThirdpersonCrosshair{ false };
+
 
 		inline CVar<bool> WorldModulation{ false };
 		inline CVar<bool> PropWireframe{ false };
@@ -503,22 +559,16 @@ namespace Vars
 		inline CVar<int> SeperatorLength{ 12 };
 		inline CVar<int> SeperatorSpacing{ 6 };
 
+		inline CVar<int> ParticleTracer{ 2 };
+		inline CVar<int> ParticleTracerCrits{ 2 };
+		inline std::string ParticleName		 = "merasmus_zap_beam01"; // dont save these as vars its pointless
+		inline std::string ParticleNameCrits = "merasmus_zap_beam01"; 
 		inline CVar<bool> DoPostProcessing{ false };
 
 		namespace Particles
 		{
-			namespace Colors
-			{
-				inline CVar<int> Type{ 0 };
-				inline CVar<float> RainbowSpeed{ 1.5f };
-			}
-			namespace Tracers
-			{
-				inline CVar<int> ParticleTracer{ 2 };
-				inline CVar<int> ParticleTracerCrits{ 2 };
-				inline std::string ParticleName = "merasmus_zap_beam01"; // dont save these as vars its pointless
-				inline std::string ParticleNameCrits = "merasmus_zap_beam01";
-			}
+			inline CVar<int> ParticleColors{ 0 };
+			inline CVar<float> RainbowSpeed{ 1.5f };
 			namespace Feet
 			{
 				inline CVar<bool> Enabled{ false };
@@ -546,6 +596,7 @@ namespace Vars
 		}
 
 		inline CVar<bool> BulletTracerRainbow{ false };
+		inline CVar<bool> AimPosSquare{ false };
 		inline CVar<bool> OutOfFOVArrows{ false };
 		inline CVar<float> ArrowLength{ 21.f };
 		inline CVar<float> ArrowAngle{ 100.f };
@@ -562,9 +613,14 @@ namespace Vars
 		inline CVar<bool> DamageLoggerChat{ false };
 		inline CVar<bool> DamageLoggerConsole{ false };
 
+		inline CVar<int> VisionModifier{ false };
+
+		inline CVar<int> Rain{ false };
 		inline CVar<bool> EquipRegionUnlock{ false };
 
 		inline CVar<bool> NoStaticPropFade{ false };
+		inline CVar<bool> ParticlesIgnoreZ{ false };
+
 
 		namespace RagdollEffects
 		{
@@ -582,40 +638,103 @@ namespace Vars
 			inline CVar<float> RagdollForceSides{ 1.f };
 			inline CVar<float> RagdollForceUp{ 1.f };
 		}
+
+		namespace Skins
+		{
+			inline CVar<bool> Enabled{ false };
+			inline CVar<int> Sheen{ 0 };
+			inline CVar<int> Effect{ 0 };
+			inline CVar<int> Particle{ 0 };
+			inline CVar<bool> Acient{ false };
+			inline CVar<bool> Override{ false };
+			inline CVar<bool> Australium{ false };
+		}
+
+		namespace Fog
+		{
+			inline CVar<bool> DisableFog{ false };
+			inline CVar<bool> CustomFog{ false };
+			inline Color_t FogColor{ 255, 255, 255, 255 };
+			inline Color_t FogColorSkybox{ 255, 255, 255, 255 };
+			inline CVar<float> FogDensity{ 0 };
+			inline CVar<float> FogDensitySkybox{ 0 };
+			inline CVar<float> FogStart{ 0 };
+			inline CVar<float> FogStartSkybox{ 0 };
+			inline CVar<float> FogEnd{ 0 };
+			inline CVar<float> FogEndSkybox{ 0 };
+		}
 	}
 
 	namespace Misc
 	{
 		inline CVar<bool> FastDeltaStrafe{ false };
-		inline CVar<int> AccurateMovement{ 0 };
+		inline CVar<int> AccurateMovement{ false };
+		inline CVar<int> InfiniteEatKey{ 0 };
 		inline CVar<bool> AutoJump{ false };
+		inline CVar<bool> AutoVote{ false };
+		inline CVar<bool> DuckJump{ false };
 		inline CVar<int> AutoStrafe{ 2 };
 		inline CVar<bool> DirectionalOnlyOnMove{ false };
 		inline CVar<bool> Directional{ false };
 		inline CVar<bool> TauntSlide{ false };
 		inline CVar<bool> TauntControl{ false };
+		inline CVar<bool> TauntSpin{ false };
+		inline CVar<int> TauntSpinKey{ false };
+		inline CVar<float> TauntSpinSpeed{ 5.f };
 		inline CVar<bool> TauntFollowsCamera{ false };
 		inline CVar<bool> BypassPure{ false };
+		inline CVar<bool> NoisemakerSpam{ false };
 		inline CVar<bool> DisableInterpolation{ false };
+		inline CVar<bool> MedalFlip{ false };
+		inline CVar<bool> AutoRocketJump{ false };
+		inline CVar<bool> NonLethalRocketJump{ true };
+		inline CVar<bool> AutoScoutJump{ false };
+		inline CVar<int> ChatSpam{ 0 };
+		inline CVar<int> VoicechatSpam{ 0 };
+		inline CVar<float> SpamInterval{ 4.f };
 		inline CVar<int> NoPush{ 0 };	//	0 off, 1 on, 2 on while not afk, 3 semi while afk
+		inline CVar<bool> EdgeJump{ false };
+		inline CVar<bool> StoreStatistics{ false };
+		inline CVar<int> EdgeJumpKey{ VK_MENU };
 		inline CVar<bool> AntiAFK{ false };
-		inline CVar<int> VotingOptions{ 0b000100 }; // 000100 {verbose, autovote, party, chat, console, text}
+		inline CVar<int> VotingOptions{ 0b000011 }; // 000011 {verbose, autovote, party, chat, console, text}
 		inline CVar<bool> CheatsBypass{ false };
 		inline CVar<bool> CrouchSpeed{ false };
 		inline CVar<bool> FastAccel{ false };
 		inline CVar<bool> FakeAccelAngle{ false };
-		inline CVar<bool> AntiAutobalance{ false };
+		inline CVar<bool> AntiAutobal{ false };
+		inline CVar<bool> RageRetry{ false };
+		inline CVar<int> RageRetryHealth{ 20 };
 		inline CVar<bool> MVMRes{ false };
 		inline CVar<bool> PingReducer{ false };
 		inline CVar<int> PingTarget{ 0 };
+		inline CVar<bool> ExtendFreeze{ false };
+		inline CVar<bool> ViewmodelFlip{ false };
+		inline CVar<bool> AntiViewmodelFlip{ false }; // scuffed
+		inline CVar<int> AutoJoin{ false };
+		inline CVar<bool> KillstreakWeapon{ false };
+		inline CVar<bool> PartyNetworking{ false };
+		inline CVar<bool> PartyCrasher{ false };
+		inline CVar<int> PartyMarker{ false };
+		inline CVar<bool> PartyESP{ false };
 		inline CVar<int> SoundBlock{ 0 };
 		inline CVar<bool> ChatFlags{ false };
+		inline CVar<int> MedievalChat{ 0 };
 		inline CVar<bool> AutoAcceptItemDrops{ false };
 		inline CVar<bool> RegionChanger{ false };
 		inline CVar<int> RegionsAllowed{ 0 };
 		inline CVar<int> AutoCasualQueue{ 0 };
+		inline CVar<bool> JoinSpam{ false };
+		inline CVar<bool> AntiVAC{ false };
 		inline CVar<int> InstantAccept{ false };
+		inline CVar<bool> RunescapeChat{ false };
 		inline CVar<bool> ScoreboardPlayerlist{ false };
+		namespace Followbot
+		{
+			inline CVar<bool> Enabled{ false };
+			inline CVar<bool> FriendsOnly{ false };
+			inline CVar<float> Distance{ 150.f };
+		}
 
 		namespace CheaterDetection
 		{
@@ -683,6 +802,15 @@ namespace Vars
 				inline CVar<int> Material{ 1 };
 				inline Color_t FakelagColor{ 255, 255, 255, 255 };
 			}
+		}
+
+		namespace Discord
+		{
+			inline CVar<bool> EnableRPC{ false };
+			inline CVar<bool> IncludeClass{ false };
+			inline CVar<bool> IncludeMap{ false };
+			inline CVar<bool> IncludeTimestamp{ false };
+			inline CVar<int> WhatImagesShouldBeUsed{ 0 }; // 0 - Big fedora, small TF2 logo; 1 - Big TF2 logo, small fedora
 		}
 
 		namespace Steam
@@ -774,7 +902,7 @@ namespace Vars
 		namespace FONT_MENU
 		{
 			inline std::string szName = "Small Fonts";
-			inline CVar<int> nTall = { 12 };
+			inline CVar<int> nTall = { 11 };
 			inline CVar<int> nWeight = { 0 };
 			inline CVar<int> nFlags = { FONTFLAG_ANTIALIAS };
 		}

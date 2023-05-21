@@ -144,7 +144,8 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 		// distance things
 		const Vec3 vDelta = Player->GetAbsOrigin() - pLocal->GetAbsOrigin();
 		const float flDistance = vDelta.Length2D();
-		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Players::Alpha.Value);
+		if (flDistance >= (Player->GetDormant() ? Vars::ESP::Main::DormantDist.Value : Vars::ESP::Main::NetworkedDist.Value)) { continue; }
+		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Main::DistanceToAlpha.Value ? Math::RemapValClamped(flDistance, (Player->GetDormant() ? Vars::ESP::Main::DormantDist.Value : Vars::ESP::Main::NetworkedDist.Value) - 256.f, (Player->GetDormant() ? Vars::ESP::Main::DormantDist.Value : Vars::ESP::Main::NetworkedDist.Value), Vars::ESP::Players::Alpha.Value, 0.f) : Vars::ESP::Players::Alpha.Value);
 
 		if (Player->GetDormant()) {
 			Player->m_iHealth() = cResource->GetHealth(Player->GetIndex());
@@ -155,31 +156,52 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 
 		if (!bIsLocal)
 		{
-			if (Vars::ESP::Players::IgnoreCloaked.Value)
+			switch (Vars::ESP::Players::IgnoreCloaked.Value)
+			{
+			case 0: { break; }
+			case 1:
 			{
 				if (Player->IsCloaked()) { continue; }
+				break;
+			}
+			case 2:
+			{
+				if (Player->IsCloaked() && Player->GetTeamNum() != pLocal->GetTeamNum()) { continue; }
+				break;
+			}
 			}
 
-			if (Vars::ESP::Players::IgnoreTeammates.Value)
+			switch (Vars::ESP::Players::IgnoreTeammates.Value)
 			{
-				if (Vars::ESP::Players::IgnoreFriends.Value)
-				{
-					if (Player->GetTeamNum() == pLocal->GetTeamNum() && g_EntityCache.IsFriend(nIndex)) { continue; }
-				}
-				else
-					if (Player->GetTeamNum() == pLocal->GetTeamNum() && !g_EntityCache.IsFriend(nIndex)) { continue; }
+			case 0: break;
+			case 1:
+			{
+				if (Player->GetTeamNum() == pLocal->GetTeamNum()) { continue; }
+				break;
+			}
+			case 2:
+			{
+				if (Player->GetTeamNum() == pLocal->GetTeamNum() && !g_EntityCache.IsFriend(nIndex)) { continue; }
+				break;
+			}
 			}
 		}
 
 		else
 		{
-			if (Vars::ESP::Players::IgnoreLocal.Value)
+			if (!Vars::ESP::Players::ShowLocal.Value)
 			{
 				continue;
 			}
 		}
 
 		Color_t drawColor = Utils::GetEntityDrawColor(Player, Vars::ESP::Main::EnableTeamEnemyColors.Value);
+
+		// Player lights
+		if (Vars::ESP::Players::Dlights.Value)
+		{
+			CreateDLight(nIndex, drawColor, Player->GetAbsOrigin(), Vars::ESP::Players::DlightRadius.Value);
+		}
 
 		int x = 0, y = 0, w = 0, h = 0;
 		Vec3 vTrans[8];
@@ -238,6 +260,22 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 			}
 			default:
 				break;
+			}
+
+			// Player lines
+			if (Vars::ESP::Players::Lines.Value)
+			{
+				Vec3 vScreen, vOrigin = Vec3(g_ScreenSize.c, g_ScreenSize.h, 0.0f);
+
+				if (I::Input->CAM_IsThirdPerson())
+				{
+					Utils::W2S(pLocal->GetAbsOrigin(), vOrigin);
+				}
+
+				if (Utils::W2S(Player->GetAbsOrigin(), vScreen))
+				{
+					g_Draw.Line(vOrigin.x, vOrigin.y, vScreen.x, vScreen.y, drawColor);
+				}
 			}
 
 			// Health Text
@@ -319,8 +357,29 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 				if (Vars::ESP::Players::Name.Value)
 				{
 					int offset = g_Draw.m_vecFonts[FONT_NAME].nTall + g_Draw.m_vecFonts[FONT_NAME].nTall / 4;
-					g_Draw.String(FONT_NAME, middle, y - offset, Vars::ESP::Players::NameCustom.Value ? Vars::ESP::Players::NameColor : drawColor, ALIGN_CENTERHORIZONTAL,
-						Utils::ConvertUtf8ToWide(pi.name).data());
+					if (Vars::ESP::Players::NameBox.Value)
+					{
+						int wideth, heighth;
+						I::VGuiSurface->GetTextSize(g_Draw.m_vecFonts[FONT_NAME].dwFont,
+							Utils::ConvertUtf8ToWide(pi.name).data(), wideth, heighth);
+						Color_t LineColor = drawColor;
+						LineColor.a = 180;
+						//g_Draw.Rect((x + (w / 2) - (wideth / 2)) - 5, y - offset - 5, wideth + 10, heighth + 10, { 0,0,0,180 });
+						g_Draw.Rect(middle - wideth / 2 - 5, y - offset, wideth + 10, heighth + 2, { 0, 0, 0, 180 });
+						//g_Draw.Rect((x + (w / 2) - (wideth / 2)) - 5, y - offset - 7, wideth + 10, 2, LineColor);
+						g_Draw.Rect(middle - wideth / 2 - 5, y - offset - 2, wideth + 10, 2, LineColor);
+						offset -= 1;
+					}
+					if (Vars::ESP::Players::NameCustom.Value)
+					{
+						g_Draw.String(FONT_NAME, middle, y - offset, Vars::ESP::Players::NameColor, ALIGN_CENTERHORIZONTAL,
+							Utils::ConvertUtf8ToWide(pi.name).data());
+					}
+					else
+					{
+						g_Draw.String(FONT_NAME, middle, y - offset, drawColor, ALIGN_CENTERHORIZONTAL,
+							Utils::ConvertUtf8ToWide(pi.name).data());
+					}
 				}
 
 				if (Vars::ESP::Players::PriorityText.Value)
@@ -361,6 +420,13 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 					default: break;
 					}
 				}
+
+				// GUID ESP
+				if (Vars::ESP::Players::GUID.Value)
+				{
+					g_Draw.String(FONT, nTextX, y + nTextOffset, Colors::White, ALIGN_DEFAULT, "%s", pi.guid);
+					nTextOffset += g_Draw.m_vecFonts[FONT].nTall;
+				}
 			}
 
 			// Class ESP
@@ -371,6 +437,11 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 					int offset = Vars::ESP::Players::Name.Value
 						? g_Draw.m_vecFonts[FONT_NAME].nTall + g_Draw.m_vecFonts[FONT_NAME].nTall * 0.3f
 						: 0;
+
+					if (offset && Vars::ESP::Players::NameBox.Value)
+					{
+						offset += 2;
+					}
 
 					static constexpr int TEXTURE_SIZE = 18;
 					if (Vars::ESP::Players::PriorityText.Value && G::PlayerPriority[pi.friendsID].Mode != 2)
@@ -747,25 +818,58 @@ void CESP::DrawPlayers(CBaseEntity* pLocal)
 
 				if (Vars::ESP::Players::HealthBarStyle.Value == 0 && Vars::ESP::Players::HealthBar.Value)
 				{
-					g_Draw.OutlinedGradientBar(x - 4, y + h, 2, h, ratio, clr.startColour, clr.endColour, Colors::OutlineESP, false);
+					if (Vars::ESP::Main::AnimatedHealthBars.Value)
+					{
+						g_Draw.OutlinedGradientBar(x - 4, y + h, 2, h, prev_player_hp[Player->GetIndex()] / player_hp_max, clr.startColour, clr.endColour, Colors::OutlineESP, false);
+					}
+					else
+					{
+						g_Draw.OutlinedGradientBar(x - 4, y + h, 2, h, ratio, clr.startColour, clr.endColour, Colors::OutlineESP, false);
+					}
 				}
 
 				else if (Vars::ESP::Players::HealthBarStyle.Value == 1 && Vars::ESP::Players::HealthBar.Value)
 				{
-					g_Draw.RectOverlay(x - 4, y + h, 2, h, ratio, HealthColor, Colors::OutlineESP, false);
+					if (Vars::ESP::Main::AnimatedHealthBars.Value)
+					{
+						g_Draw.RectOverlay(x - 4, y + h, 2, h, prev_player_hp[Player->GetIndex()] / player_hp_max, HealthColor, Colors::OutlineESP, false);
+					}
+					else
+					{
+						g_Draw.RectOverlay(x - 4, y + h, 2, h, ratio, HealthColor, Colors::OutlineESP, false);
+					}
 				}
 
 				if (Vars::ESP::Players::HealthText.Value == 2)
 				{
+					int textOffset = 6;
+					if (Vars::ESP::Players::Choked.Value) {					
+						textOffset = 10; 
+					}
 					if (nHealth > nMaxHealth)
 					{
-						g_Draw.String(FONT, x - 6, (y + h) - (ratio * h) - 4, Colors::White, ALIGN_REVERSE, "+%d", nHealth - nMaxHealth);
+						g_Draw.String(FONT, x - textOffset, (y + h) - (ratio * h) - 4, Colors::White, ALIGN_REVERSE, "+%d", nHealth - nMaxHealth);
 					}
 					else
 					{
-						g_Draw.String(FONT, x - 6, (y + h) - (ratio * h) - 4, Colors::White, ALIGN_REVERSE, "%d", nHealth);
+						g_Draw.String(FONT, x - textOffset, (y + h) - (ratio * h) - 4, Colors::White, ALIGN_REVERSE, "%d", nHealth);
 					}
 				}
+
+				x += 1;
+			}
+
+			// Choked packets indicator/bar
+			if (Vars::ESP::Players::Choked.Value)
+			{
+				x -= 1;
+				static float ratio = 0.0f;
+				int chokeCount = G::ChokeMap[nIndex];
+
+				Vec2 position = { static_cast<float>(x) - 2.f - 8.f, static_cast<float>(y + h) };
+				ratio = chokeCount / 22.f;
+				Math::Clamp(ratio, 0.f, 22.f);
+				g_Draw.OutlinedGradientBar(position.x, position.y, 2, h, ratio, Colors::ChokedBar.startColour, Colors::ChokedBar.endColour, Colors::OutlineESP, false);
 
 				x += 1;
 			}
@@ -791,11 +895,19 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 		// distance things
 		const Vec3 vDelta = pBuilding->GetAbsOrigin() - pLocal->GetAbsOrigin();
 		const float flDistance = vDelta.Length2D();
-		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Buildings::Alpha.Value);
+		if (flDistance >= Vars::ESP::Main::NetworkedDist.Value) { continue; }
+		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Main::DistanceToAlpha.Value ? Math::RemapValClamped(flDistance, Vars::ESP::Main::NetworkedDist.Value - 256.f, Vars::ESP::Main::NetworkedDist.Value, Vars::ESP::Buildings::Alpha.Value, 0.f) : Vars::ESP::Buildings::Alpha.Value);
 
 		const auto& building = reinterpret_cast<CBaseObject*>(pBuilding);
 
 		Color_t drawColor = Utils::GetEntityDrawColor(building, Vars::ESP::Main::EnableTeamEnemyColors.Value);
+
+		// Building lights
+		if (Vars::ESP::Buildings::Dlights.Value)
+		{
+			CreateDLight(building->GetIndex(), drawColor, building->GetAbsOrigin(),
+				Vars::ESP::Buildings::DlightRadius.Value);
+		}
 
 		int x = 0, y = 0, w = 0, h = 0;
 		Vec3 vTrans[8];
@@ -843,6 +955,22 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 				break;
 			}
 
+			// Building lines
+			if (Vars::ESP::Buildings::Lines.Value)
+			{
+				Vec3 vScreen, vOrigin = Vec3(g_ScreenSize.c, g_ScreenSize.h, 0.0f);
+
+				if (I::Input->CAM_IsThirdPerson())
+				{
+					Utils::W2S(pLocal->GetAbsOrigin(), vOrigin);
+				}
+
+				if (Utils::W2S(building->GetAbsOrigin(), vScreen))
+				{
+					g_Draw.Line(vOrigin.x, vOrigin.y, vScreen.x, vScreen.y, drawColor);
+				}
+			}
+
 			// Name ESP
 			if (Vars::ESP::Buildings::Name.Value)
 			{
@@ -887,8 +1015,29 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 				}
 
 				nTextTopOffset += g_Draw.m_vecFonts[FONT_NAME].nTall + g_Draw.m_vecFonts[FONT_NAME].nTall / 4;
-				g_Draw.String(FONT_NAME, x + w / 2, y - nTextTopOffset, Vars::ESP::Buildings::NameCustom.Value ? Vars::ESP::Buildings::NameColor : drawColor, ALIGN_CENTERHORIZONTAL,
-					szName);
+				if (Vars::ESP::Buildings::NameBox.Value)
+				{
+					int width, height;
+					const int middle = x + w / 2;
+					I::VGuiSurface->GetTextSize(g_Draw.m_vecFonts[FONT_NAME].dwFont, szName, width, height);
+					Color_t LineColor = drawColor;
+					LineColor.a = 180;
+					//g_Draw.Rect((x + (w / 2) - (wideth / 2)) - 5, y - offset - 5, wideth + 10, heighth + 10, { 0,0,0,180 });
+					g_Draw.Rect(middle - width / 2 - 5, y - nTextTopOffset, width + 10, height + 2,
+						{ 0, 0, 0, 180 });
+					//g_Draw.Rect((x + (w / 2) - (wideth / 2)) - 5, y - offset - 7, wideth + 10, 2, LineColor);
+					g_Draw.Rect(middle - width / 2 - 5, y - nTextTopOffset - 2, width + 10, 2, LineColor);
+				}
+				if (Vars::ESP::Buildings::NameCustom.Value)
+				{
+					g_Draw.String(FONT_NAME, x + w / 2, y - nTextTopOffset, Vars::ESP::Buildings::NameColor, ALIGN_CENTERHORIZONTAL,
+						szName);
+				}
+				else
+				{
+					g_Draw.String(FONT_NAME, x + w / 2, y - nTextTopOffset, drawColor, ALIGN_CENTERHORIZONTAL,
+						szName);
+				}
 			}
 
 			//Distance ESP
@@ -1000,7 +1149,25 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 
 				const float ratio = flHealth / flMaxHealth;
 
-				g_Draw.RectOverlay(x - 4, y + h, 2, h, ratio, healthColor, Colors::OutlineESP, false);
+				if (Vars::ESP::Main::AnimatedHealthBars.Value)
+				{
+					float SPEED_FREQ = 145 / 0.65f;
+					int building_hp = flHealth;
+					int building_hp_max = flMaxHealth;
+					static float prev_building_hp[75];
+
+					if (prev_building_hp[building->GetIndex()] > building_hp)
+						prev_building_hp[building->GetIndex()] -= SPEED_FREQ * I::GlobalVars->frametime;
+					else
+						prev_building_hp[building->GetIndex()] = building_hp;
+
+					g_Draw.RectOverlay(x - 4, y + h, 2, h, prev_building_hp[building->GetIndex()] / building_hp_max, healthColor, Colors::OutlineESP, false);
+				}
+				else
+				{
+					g_Draw.RectOverlay(x - 4, y + h, 2, h, ratio, healthColor, Colors::OutlineESP, false);
+				}
+
 				g_Draw.OutlinedRect(x - 5, y + nHeight - nHeight * ratio - 1, 4,
 					nHeight * ratio + 1, Colors::OutlineESP);
 
@@ -1011,6 +1178,38 @@ void CESP::DrawBuildings(CBaseEntity* pLocal) const
 
 				x += 1;
 			}
+
+			// Teleport exit direction
+			if (Vars::ESP::Buildings::TeleExitDir.Value)
+			{
+				if (building->IsTeleporter() && building->GetObjectMode() == 1)
+				{
+					const Vec3 Origin = building->GetAbsOrigin();
+
+					Vec3 Forward{};
+					Vec3 Right{};
+					Vec3 Up{};
+
+					Math::AngleVectors(building->GetAbsAngles(), &Forward, &Right, &Up);
+
+					const Vec3 ArrowTop = Forward * 55.0f + Origin;
+					const Vec3 ArrowLeft = Right * -5.0f + Forward * 32.5f + Origin;
+					const Vec3 ArrowRight = Right * 5.0f + Forward * 32.5f + Origin;
+
+					Vec3 ArrowLeftScrn, ArrowRightScrn, ArrowTopScrn;
+
+					if (Utils::W2S(ArrowLeft, ArrowLeftScrn) &&
+						Utils::W2S(ArrowRight, ArrowRightScrn) &&
+						Utils::W2S(ArrowTop, ArrowTopScrn))
+					{
+						const std::array<Vec2, 3> Points{ Vec2(ArrowLeftScrn.x, ArrowLeftScrn.y),
+													Vec2(ArrowTopScrn.x, ArrowTopScrn.y),
+													Vec2(ArrowRightScrn.x, ArrowRightScrn.y) };
+						g_Draw.DrawOutlinedTriangle(Points, Vars::ESP::Buildings::TeleExitDirColor);
+					}
+				}
+			}
+
 		}
 	}
 	I::VGuiSurface->DrawSetAlphaMultiplier(1.0f);
@@ -1035,7 +1234,8 @@ void CESP::DrawWorld() const
 		// distance things
 		const Vec3 vDelta = health->GetAbsOrigin() - pLocal->GetAbsOrigin();
 		const float flDistance = vDelta.Length2D();
-		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::World::Alpha.Value);
+		if (flDistance >= Vars::ESP::Main::NetworkedDist.Value) { continue; }
+		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Main::DistanceToAlpha.Value ? Math::RemapValClamped(flDistance, Vars::ESP::Main::NetworkedDist.Value - 256.f, Vars::ESP::Main::NetworkedDist.Value, Vars::ESP::World::Alpha.Value, 0.f) : Vars::ESP::World::Alpha.Value);
 
 		int x = 0, y = 0, w = 0, h = 0;
 		Vec3 vTrans[8];
@@ -1099,7 +1299,8 @@ void CESP::DrawWorld() const
 		// distance things
 		const Vec3 vDelta = ammo->GetAbsOrigin() - pLocal->GetAbsOrigin();
 		const float flDistance = vDelta.Length2D();
-		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::World::Alpha.Value);
+		if (flDistance >= Vars::ESP::Main::NetworkedDist.Value) { continue; }
+		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Main::DistanceToAlpha.Value ? Math::RemapValClamped(flDistance, Vars::ESP::Main::NetworkedDist.Value - 256.f, Vars::ESP::Main::NetworkedDist.Value, Vars::ESP::World::Alpha.Value, 0.f) : Vars::ESP::World::Alpha.Value);
 
 		int x = 0, y = 0, w = 0, h = 0;
 		Vec3 vTrans[8];
@@ -1163,7 +1364,8 @@ void CESP::DrawWorld() const
 		// distance things
 		const Vec3 vDelta = NPC->GetAbsOrigin() - pLocal->GetAbsOrigin();
 		const float flDistance = vDelta.Length2D();
-		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::World::Alpha.Value);
+		if (flDistance >= Vars::ESP::Main::NetworkedDist.Value) { continue; }
+		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Main::DistanceToAlpha.Value ? Math::RemapValClamped(flDistance, Vars::ESP::Main::NetworkedDist.Value - 256.f, Vars::ESP::Main::NetworkedDist.Value, Vars::ESP::World::Alpha.Value, 0.f) : Vars::ESP::World::Alpha.Value);
 
 		int x = 0, y = 0, w = 0, h = 0;
 		Vec3 vTrans[8];
@@ -1265,7 +1467,8 @@ void CESP::DrawWorld() const
 		// distance things
 		const Vec3 vDelta = Bombs->GetAbsOrigin() - pLocal->GetAbsOrigin();
 		const float flDistance = vDelta.Length2D();
-		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::World::Alpha.Value);
+		if (flDistance >= Vars::ESP::Main::NetworkedDist.Value) { continue; }
+		I::VGuiSurface->DrawSetAlphaMultiplier(Vars::ESP::Main::DistanceToAlpha.Value ? Math::RemapValClamped(flDistance, Vars::ESP::Main::NetworkedDist.Value - 256.f, Vars::ESP::Main::NetworkedDist.Value, Vars::ESP::World::Alpha.Value, 0.f) : Vars::ESP::World::Alpha.Value);
 
 		int x = 0, y = 0, w = 0, h = 0;
 		Vec3 vTrans[8];
@@ -1403,6 +1606,83 @@ private:
 	int m_nCondBit;
 };
 
+class CTFCondition;
+
+
+class CTFConditionList
+{
+public:
+	CTFConditionList();
+
+	bool InCond(ETFCond type) const;
+
+	CUtlVector<CTFCondition*> _conditions;
+
+	int _condition_bits;
+	int _old_condition_bits;
+};
+
+bool CTFConditionList::InCond(ETFCond type) const
+{
+	return ((_condition_bits & (1 << type)) != 0);
+}
+
+class CTFCondition
+{
+public:
+	CTFCondition(ETFCond type, float duration, CBaseEntity* outer, CBaseEntity* provider = nullptr);
+	virtual ~CTFCondition();
+
+	virtual void Add(float duration);
+
+	virtual void OnAdded() = 0;
+	virtual void OnRemoved() = 0;
+	virtual void OnThink() = 0;
+	virtual void OnServerThink() = 0;
+
+	// Condition Traits
+	virtual bool IsHealable() { return false; }
+	virtual bool UsesMinDuration() { return false; }
+
+	ETFCond GetType() { return _type; }
+	float GetMaxDuration() { return _max_duration; }
+	void SetMaxDuration(float val) { _max_duration = val; }
+	float GetMinDuration() { return _min_duration; }
+	void SetMinDuration(float val) { if (UsesMinDuration()) { _min_duration = val; } }
+	CBaseEntity* GetOuter() { return _outer; }
+	void SetProvider(CBaseEntity* provider) { _provider = provider; }
+	CBaseEntity* GetProvider() { return _provider; }
+
+private:
+	float _min_duration;
+	float _max_duration;
+	const ETFCond _type;
+	CBaseEntity* _outer;
+	CBaseEntity* _provider;
+};
+
+bool InCond(CBaseEntity* pEntity, int eCond)
+{
+	if (eCond >= 0 && eCond < 122)
+	{
+		void* condList = pEntity->m_ConditionList();
+		const auto& conditionList = *reinterpret_cast<CTFConditionList*>(condList);
+
+		if (conditionList._conditions.Count() > 0)
+		{
+			// Old condition system, only used for the first 32 conditions
+			if (eCond < 32 && conditionList.InCond(eCond))
+			{
+				return true;
+			}
+
+			CConditionVars<const int> cPlayerCond(pEntity->GetCond(), pEntity->GetCondEx(), pEntity->GetCondEx2(), pEntity->GetCondEx3(), eCond);
+			return (cPlayerCond.CondVar() & cPlayerCond.CondBit()) != 0;
+		}
+	}
+	return false;
+}
+
 const wchar_t* CESP::GetPlayerClass(int nClassNum)
 {
 	static const wchar_t* szClasses[] = {
@@ -1411,6 +1691,20 @@ const wchar_t* CESP::GetPlayerClass(int nClassNum)
 	};
 
 	return nClassNum < 10 && nClassNum > 0 ? szClasses[nClassNum] : szClasses[0];
+}
+
+void CESP::CreateDLight(int nIndex, Color_t DrawColor, const Vec3& vOrigin, float flRadius)
+{
+	const auto pLight = I::EngineEffects->CL_AllocDlight(nIndex);
+	pLight->m_flDie = I::EngineClient->Time() + 0.5f;
+	pLight->m_flRadius = flRadius;
+	pLight->m_Color.r = DrawColor.r;
+	pLight->m_Color.g = DrawColor.g;
+	pLight->m_Color.b = DrawColor.b;
+	pLight->m_Color.m_Exponent = 5;
+	pLight->m_nKey = nIndex;
+	pLight->m_flDecay = 512.0f;
+	pLight->m_vOrigin = vOrigin + Vec3(0.0f, 0.0f, 50.0f);
 }
 
 //Got this from dude719, who got it from somewhere else

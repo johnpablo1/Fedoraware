@@ -9,13 +9,17 @@
 #include "../../Features/AntiHack/FakeLag/FakeLag.h"
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/Visuals/FakeAngleManager/FakeAng.h"
+#include "../../Features/Camera/CameraWindow.h"
 #include "../../Features/CritHack/CritHack.h"
+#include "../../Features/Fedworking/Fedworking.h"
 #include "../../Features/Resolver/Resolver.h"
 #include "../../Features/AntiHack/CheaterDetection/CheaterDetection.h"
+#include "../../Features/Followbot/Followbot.h"
 #include "../../Features/Vars.h"
 #include "../../Features/Chams/DMEChams.h"
 #include "../../Features/Glow/Glow.h"
 #include "../../Features/Menu/MaterialEditor/MaterialEditor.h"
+#include "../../Features/LuaEngine/Callbacks/LuaCallbacks.h"
 #include "../../Features/TickHandler/TickHandler.h"
 #include "../../Features/Backtrack/Backtrack.h"
 
@@ -133,6 +137,8 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	// Run Features
 	{
 		F::Misc.RunPre(pCmd, pSendPacket);
+		F::Fedworking.Run();
+		F::CameraWindow.Update();
 		F::BadActors.OnTick();
 		F::Backtrack.Run(pCmd);
 
@@ -141,6 +147,7 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 			F::Aimbot.Run(pCmd);
 			F::Auto.Run(pCmd);
 			F::AntiAim.Run(pCmd, pSendPacket);
+			F::Misc.RunMid(pCmd, nOldFlags);
 			F::FakeLag.OnTick(pCmd, pSendPacket, nOldGroundEnt, nOldFlags);
 		}
 		F::EnginePrediction.End(pCmd);
@@ -149,7 +156,11 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 		F::CritHack.Run(pCmd);
 		F::Misc.RunPost(pCmd, pSendPacket);
 		F::Resolver.CreateMove();
+		F::Followbot.Run(pCmd);
 	}
+
+	// Run Lua callbacks
+	F::LuaCallbacks.OnCreateMove(pCmd, pSendPacket);
 
 	if (*pSendPacket)
 	{
@@ -158,6 +169,12 @@ MAKE_HOOK(ClientModeShared_CreateMove, Utils::GetVFuncPtr(I::ClientModeShared, 2
 	}
 
 	G::ViewAngles = pCmd->viewangles;
+
+	// Party Crasher: Crashes the party by spamming messages
+	if (Vars::Misc::PartyCrasher.Value && !G::ShouldShift)
+	{
+		I::EngineClient->ClientCmd_Unrestricted("tf_party_chat \"FED@MA==\"");
+	}
 
 	if (!G::ShouldShift)
 	{

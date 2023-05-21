@@ -4,6 +4,8 @@
 #include "../../Features/AntiHack/AntiAim.h"
 #include "../../Features/AntiHack/CheaterDetection/CheaterDetection.h"
 #include "../../Features/Visuals/Visuals.h"
+#include "../../Features/Killstreak/Killstreak.h"
+#include "../../Features/LuaEngine/Callbacks/LuaCallbacks.h"
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/Misc/Misc.h"
 
@@ -34,6 +36,8 @@ void CEventListener::FireGameEvent(CGameEvent* pEvent)
 	const FNV1A_t uNameHash = FNV1A::Hash(pEvent->GetName());
 	F::ChatInfo.Event(pEvent, uNameHash);
 	F::AntiAim.Event(pEvent, uNameHash);
+	F::Statistics.Event(pEvent, uNameHash);
+	/*F::Killstreaker.FireEvents(pEvent, uNameHash);*/
 
 	if (uNameHash == FNV1A::HashConst("player_hurt"))
 	{
@@ -41,6 +45,9 @@ void CEventListener::FireGameEvent(CGameEvent* pEvent)
 		F::Backtrack.PlayerHurt(pEvent);
 		F::BadActors.ReportDamage(pEvent);
 	}
+
+	// Run Lua callbacks
+	F::LuaCallbacks.OnFireGameEvent(pEvent);
 
 	// Pickup Timers
 	if (Vars::Visuals::PickupTimers.Value && uNameHash == FNV1A::HashConst("item_pickup"))

@@ -284,7 +284,8 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 				if (!aimPosition)
 				{
 					bNeedsTimeCheck = true;
-					continue; 
+					if (Vars::Aimbot::Projectile::PredictObscured.Value) { continue; }
+					else { break; }
 				} // don't remove.
 
 				//const Vec3 vAimDelta = predictor.m_pEntity->GetAbsOrigin() - aimPosition;
@@ -441,8 +442,8 @@ std::optional<Vec3> CAimbotProjectile::GetAimPos(CBaseEntity* pLocal, CBaseEntit
 	int iCurPoint = 0, iTestPoints = 0; //maybe better way to do this
 	for (const auto& vPoint : vPoints)
 	{
-		if (iTestPoints > 15) { break; }
-		if (static_cast<int>(vVisPoints.size()) >= 7) { break; }
+		if (iTestPoints > Vars::Aimbot::Projectile::VisTestPoints.Value) { break; }
+		if (static_cast<int>(vVisPoints.size()) >= Vars::Aimbot::Projectile::ScanPoints.Value) { break; }
 		if (!IsPointAllowed(iCurPoint))
 		{
 			iCurPoint++;
@@ -727,6 +728,8 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 	const Vec3 vLocalPos = pLocal->GetShootPos();
 	const Vec3 vLocalAngles = I::EngineClient->GetViewAngles();
 
+	const bool respectFOV = (sortMethod == ESortMethod::FOV || Vars::Aimbot::Projectile::RespectFOV.Value);
+
 	// Players
 	if (Vars::Aimbot::Global::AimAt.Value & (ToAimAt::PLAYER))
 	{
@@ -757,7 +760,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 			Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
-			if (flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
+			if (respectFOV && flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
 			{
 				continue;
 			}
@@ -795,7 +798,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 		Vec3 vAngleTo = Math::CalcAngle(vLocalPos, vPos);
 		const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 
-		if (flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
+		if ((sortMethod == ESortMethod::FOV || Vars::Aimbot::Projectile::RespectFOV.Value) && flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
 		{
 			continue;
 		}
@@ -814,7 +817,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 			const float flDistTo = sortMethod == ESortMethod::DISTANCE ? vLocalPos.DistTo(vPos) : 0.0f;
 
-			if (flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
+			if ((sortMethod == ESortMethod::FOV || Vars::Aimbot::Hitscan::RespectFOV.Value) && flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
 			{
 				continue;
 			}
@@ -835,7 +838,7 @@ std::vector<Target_t> CAimbotProjectile::GetTargets(CBaseEntity* pLocal, CBaseCo
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
 			const float flDistTo = sortMethod == ESortMethod::DISTANCE ? vLocalPos.DistTo(vPos) : 0.0f;
 
-			if (flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
+			if ((sortMethod == ESortMethod::FOV || Vars::Aimbot::Hitscan::RespectFOV.Value) && flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value)
 			{
 				continue;
 			}
@@ -1053,6 +1056,8 @@ bool CAimbotProjectile::GetSplashTarget(CBaseEntity* pLocal, CBaseCombatWeapon* 
 		const auto& vTargetCenter = pTarget->GetWorldSpaceCenter();
 		const auto& vTargetOrigin = pTarget->GetAbsOrigin();
 
+		if (vLocalOrigin.DistTo(vTargetOrigin) < Vars::Aimbot::Projectile::MinSplashPredictionDistance.Value) { continue; } // Don't shoot too close
+		if (vLocalOrigin.DistTo(vTargetOrigin) > Vars::Aimbot::Projectile::MaxSplashPredictionDistance.Value) { continue; } // Don't shoot too far
 		if (vLocalOrigin.z < vTargetOrigin.z - 45.f) { continue; } // Don't shoot from below
 
 		// Don't predict enemies that are visible
@@ -1069,7 +1074,7 @@ bool CAimbotProjectile::GetSplashTarget(CBaseEntity* pLocal, CBaseCombatWeapon* 
 			// Check FOV if enabled
 			const Vec3 vAngleTo = Math::CalcAngle(vLocalShootPos, scanPos);
 			const float flFOVTo = Math::CalcFov(vLocalAngles, vAngleTo);
-			if (flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value) { continue; }
+			if ((sortMethod == ESortMethod::FOV || Vars::Aimbot::Projectile::RespectFOV.Value) && flFOVTo > Vars::Aimbot::Projectile::AimFOV.Value) { continue; }
 
 			// Can the target receive splash damage? (Don't predict through walls)
 			Utils::Trace(scanPos, pTarget->GetWorldSpaceCenter(), MASK_SOLID, &traceFilter, &trace);
@@ -1125,6 +1130,21 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 							 ? (pCmd->buttons & IN_ATTACK)
 							 : F::AimbotGlobal.IsKeyDown());
 	if (!bShouldAim) { return; }
+
+	if (Vars::Aimbot::Projectile::WaitForHit.Value && m_flTravelTimeStart)
+	{
+		if (I::GlobalVars->curtime > m_flTravelTimeStart)
+		{
+			m_flTravelTimeStart = 0.0f;
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	ConVar* flippy = I::Cvar->FindVar("cl_flipviewmodels");
+	Flippy = flippy->GetBool();
 
 	Target_t target{};
 	if (GetTarget(pLocal, pWeapon, pCmd, target) || GetSplashTarget(pLocal, pWeapon, pCmd, target))
@@ -1230,4 +1250,6 @@ void CAimbotProjectile::Run(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CUs
 			Aim(pCmd, pWeapon, target.m_vAngleTo);
 		}
 	}
+
+	flippy->SetValue(Flippy);
 }

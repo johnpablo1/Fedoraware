@@ -151,6 +151,7 @@ namespace Colors
 	inline Color_t OutlineESP =					{ 0, 0, 0, 255 };
 	inline Gradient_t DTBarIndicatorsCharged = { {106, 255, 131, 180}, {106, 255, 250, 180} };
 	inline Gradient_t DTBarIndicatorsCharging = { {255, 192, 81, 180}, {255, 134, 81, 180} };
+	inline Gradient_t ChokedBar =				{ { 47, 39, 0, 255 }, { 255, 210, 0, 255 } };
 	inline Gradient_t GradientHealthBar =				{ { 255, 0, 0, 255 }, { 0, 202, 124, 255 } };
 	inline Gradient_t GradientOverhealBar =		{ { 0, 202, 124, 255 }, { 167, 255, 237, 255 } };
 	inline Gradient_t UberchargeBar =			{ { 255, 255, 255, 255 }, { 255, 0, 228, 255 } };
@@ -193,6 +194,8 @@ namespace Colors
 	inline Color_t HitboxFace =					{ 255, 255, 255, 25 };
 	inline Color_t HitboxEdge =					{ 255, 255, 255, 175 };
 	inline Color_t WeaponIcon =					{ 255,255,255,255 };
+	inline Color_t NoscopeLines1 =				{ 0,0,0,255 };
+	inline Color_t NoscopeLines2 =				{ 0,0,0,100 };
 	inline Color_t bonecolor =					{ 231, 95, 255, 10 };
 	inline Color_t NPC =						{ 255, 255, 255, 255 };
 	inline Color_t Bomb =						{ 255, 255, 255, 255 };

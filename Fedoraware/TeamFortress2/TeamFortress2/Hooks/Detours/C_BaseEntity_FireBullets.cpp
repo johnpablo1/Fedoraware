@@ -138,7 +138,7 @@ MAKE_HOOK(C_BaseEntity_FireBullets, g_Pattern.Find(L"client.dll", L"55 8B EC 81 
 		return;
 	}
 
-	if (!pWeapon || (!Vars::Visuals::Particles::Tracers::ParticleTracer.Value && !Vars::Visuals::BulletTracer.Value && !Vars::Visuals::Beans::Active.Value))
+	if (!pWeapon || (!Vars::Visuals::ParticleTracer.Value && !Vars::Visuals::BulletTracer.Value && !Vars::Visuals::Beans::Active.Value))
 	{
 		return Hook.Original<FN>()(ecx, edx, pWeapon, info, bDoEffects, nDamageType, nCustomDamageType);
 	}
@@ -173,7 +173,7 @@ MAKE_HOOK(C_BaseEntity_FireBullets, g_Pattern.Find(L"client.dll", L"55 8B EC 81 
 
 		const int team = pLocal->GetTeamNum();
 
-		switch (Vars::Visuals::Particles::Tracers::ParticleTracer.Value)
+		switch (Vars::Visuals::ParticleTracer.Value)
 		{
 		//Machina
 			case 1:
@@ -238,13 +238,13 @@ MAKE_HOOK(C_BaseEntity_FireBullets, g_Pattern.Find(L"client.dll", L"55 8B EC 81 
 				// custom particle tracer, def not pasted from deathpole or anything. list @ dump_particlemanifest or @ https://github.com/tf2cheater2013/particles.txt
 				if (!pLocal->IsCritBoosted())
 				{
-					Particles::ParticleTracer(Vars::Visuals::Particles::Tracers::ParticleName.c_str(), trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment,
+					Particles::ParticleTracer(Vars::Visuals::ParticleName.c_str(), trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment,
 						true);
 				}
 				break;
 		}
 
-		switch (Vars::Visuals::Particles::Tracers::ParticleTracerCrits.Value) // crit tracers
+		switch (Vars::Visuals::ParticleTracerCrits.Value) // crit tracers
 		{
 		case 1:
 			if (pLocal->IsCritBoosted())
@@ -304,7 +304,7 @@ MAKE_HOOK(C_BaseEntity_FireBullets, g_Pattern.Find(L"client.dll", L"55 8B EC 81 
 		case 8:
 			if (!pLocal->IsCritBoosted())
 			{
-				Particles::ParticleTracer(Vars::Visuals::Particles::Tracers::ParticleNameCrits.c_str(), trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment,
+				Particles::ParticleTracer(Vars::Visuals::ParticleNameCrits.c_str(), trace.vStartPos, trace.vEndPos, pLocal->GetIndex(), iAttachment,
 					true);
 			}
 			break;

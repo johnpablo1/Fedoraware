@@ -132,6 +132,7 @@ public: //Netvars & conditions
 		M_CONDGET(InJarate, GetCond(), TFCond_Jarated)
 		M_CONDGET(Bleeding, GetCond(), TFCond_Bleeding)
 		M_CONDGET(Disguised, GetCond(), TFCond_Disguised)
+		M_CONDGET(Cloaked, GetCond(), TFCond_Cloaked)
 		M_CONDGET(Taunting, GetCond(), TFCond_Taunting)
 		M_CONDGET(OnFire, GetCond(), TFCond_OnFire)
 		M_CONDGET(Stunned, GetCond(), TFCond_Stunned)
@@ -323,11 +324,6 @@ public: //Everything else, lol.
 			100.0f);
 
 		return GetInvisPercent;
-	}
-
-	__inline bool IsCloaked() // i dont put flickers in here because they are slightly visible, so it doesnt really count as cloaked to me
-	{
-		return GetCond() & TFCond_Cloaked || GetCondEx() & TFCondEx2_Stealthed;
 	}
 
 	__inline CBaseEntity* GetGroundEntity()

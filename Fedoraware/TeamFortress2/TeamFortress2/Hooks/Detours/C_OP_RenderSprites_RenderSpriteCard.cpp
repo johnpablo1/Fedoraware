@@ -33,7 +33,7 @@ struct SpriteRenderInfo_t
 //rainbow speed!!! separated from other rainbow shit so that it doesnt mess with everything (directly pasted from utils)
 __inline Color_t Rainbow()
 {
-    float rainbowspeed = Vars::Visuals::Particles::Colors::RainbowSpeed.Value;
+    float rainbowspeed = Vars::Visuals::Particles::RainbowSpeed.Value;
     return
     {
         static_cast<byte>(floor(sin(I::GlobalVars->curtime * rainbowspeed + 0.0f) * 127.0f + 128.0f)),
@@ -46,9 +46,9 @@ __inline Color_t Rainbow()
 MAKE_HOOK(C_OP_RenderSprites_RenderSpriteCard, g_Pattern.Find(L"client.dll", L"55 8B EC 83 EC 28 56 8B 75 10 57 8B 7D 14 8B C7 99 83 E7 03 83 E2 03"), void, __fastcall, 
         void* ecx, void* edx, void* meshBuilder, void* pCtx, SpriteRenderInfo_t& info, int hParticle, void* pSortList, void* pCamera)
 {
-    Color_t colors = Vars::Visuals::Particles::Colors::Type.Value == 1 ? Colors::ParticleColor : Rainbow();
+    Color_t colors = Vars::Visuals::Particles::ParticleColors.Value == 1 ? Colors::ParticleColor : Rainbow();
 
-    if (Vars::Visuals::Particles::Colors::Type.Value)
+    if (Vars::Visuals::Particles::ParticleColors.Value)
     {
         info.m_pRGB[((hParticle / 4) * info.m_nRGBStride) + 0].m128_f32[hParticle & 0x3] = Color::TOFLOAT(colors.r );
         info.m_pRGB[((hParticle / 4) * info.m_nRGBStride) + 1].m128_f32[hParticle & 0x3] = Color::TOFLOAT(colors.g);

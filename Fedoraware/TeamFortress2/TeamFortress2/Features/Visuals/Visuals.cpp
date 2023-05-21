@@ -37,6 +37,23 @@ void CVisuals::DrawHitboxMatrix(CBaseEntity* pEntity, Color_t colourface, Color_
 	}
 }
 
+void CVisuals::ScopeLines(CBaseEntity* pLocal)
+{
+	if (pLocal->IsScoped() && Vars::Visuals::RemoveScope.Value && Vars::Visuals::ScopeLines.Value)
+	{
+		const int centerX = g_ScreenSize.w / 2;
+		const int centerY = g_ScreenSize.h / 2;
+		const Color_t line1 = { Colors::NoscopeLines1.r, Colors::NoscopeLines1.g, Colors::NoscopeLines1.b, 255 };
+		const Color_t line2 = { Colors::NoscopeLines2.r, Colors::NoscopeLines2.g, Colors::NoscopeLines2.b, 255 };
+
+		g_Draw.GradientRect(g_ScreenSize.w / 2, centerY - 1, g_ScreenSize.w, centerY + 1, line1, line2, true);
+		g_Draw.GradientRect(0, centerY - 1, centerX, centerY + 1, line2, line1, true);
+		g_Draw.GradientRect(centerX - 1, 0, centerX + 1, centerY, line2, line1, false);
+		g_Draw.GradientRect(centerX - 1, centerY, centerX + 1, g_ScreenSize.h, line1, line2, false);
+
+	}
+}
+
 void CVisuals::DrawOnScreenConditions(CBaseEntity* pLocal)
 {
 	// check
@@ -421,7 +438,7 @@ void CVisuals::DrawTickbaseInfo(CBaseEntity* pLocal)
 						g_Draw.RoundedBoxStatic(DTBox.x, DTBox.y, DTBox.w, DTBox.h, 4, Colors::DtOutline);
 						if (G::ShiftedTicks && ratioCurrent)
 						{
-							g_Draw.RoundedBoxStatic(DTBox.x + 2, DTBox.y + 2, ratioCurrent * (DTBox.w - 4), DTBox.h - 4, 4, Vars::Menu::MenuAccent);
+							g_Draw.RoundedBoxStatic(DTBox.x + 2, DTBox.y + 2, ratioCurrent * (DTBox.w - 4), DTBox.h - 4, 4, Vars::Menu::Colors::MenuAccent);
 						}
 						if (G::WaitForShift)
 						{
@@ -596,6 +613,56 @@ void CVisuals::DrawMenuSnow()
 	}
 }
 
+void CVisuals::DrawDVD()
+{
+	{
+		static int iDVD = g_Draw.CreateTextureFromArray(DVDIcon::rawData, 237, 139);
+
+				// DVD Logo
+		if (iDVD && Vars::Menu::ShowDVD.Value)
+		{
+			static Vec2 logoPos = { 1, 1 };
+			static Vec2 logoVelocity = { 1, -1 };
+
+			if (logoPos.y <= 0 || logoPos.y >= (g_ScreenSize.h - DVDIcon::Height))
+			{
+				logoVelocity.y = -logoVelocity.y;
+			}
+			if (logoPos.x <= 0 || logoPos.x >= (g_ScreenSize.w - DVDIcon::Width))
+			{
+				logoVelocity.x = -logoVelocity.x;
+			}
+			logoPos += logoVelocity;
+
+			I::VGuiSurface->DrawSetTexture(iDVD);
+			I::VGuiSurface->DrawSetColor(Utils::Rainbow());
+			I::VGuiSurface->DrawTexturedRect(logoPos.x, logoPos.y, DVDIcon::Width, DVDIcon::Height);
+		}
+	}
+}
+
+void CVisuals::DrawPredictionLine()
+{
+	if (!G::PredictedPos.IsZero())
+	{
+		if (Vars::Visuals::AimPosSquare.Value)
+		{
+			Vec3 vProjAimStart, vProjAimEnd = Vec3(g_ScreenSize.c, g_ScreenSize.h, 0.0f);
+			if (Utils::W2S(G::LinearPredLine, vProjAimStart) && Utils::W2S(
+				G::PredictedPos, vProjAimEnd))
+			{
+				g_Draw.Line(
+					vProjAimStart.x,
+					vProjAimStart.y,
+					vProjAimEnd.x,
+					vProjAimEnd.y,
+					{ 255, 255, 255, 255 }
+				);
+			}
+		}
+	}
+}
+
 void CVisuals::DrawMovesimLine()
 {
 	if (Vars::Visuals::MoveSimLine.Value)
@@ -693,6 +760,28 @@ void CVisuals::FillSightlines()
 			Utils::Trace(vShootPos, vShootEnd, MASK_SHOT, &filter, &trace);
 
 			m_SightLines[pEnemy->GetIndex()] = { vShootPos, trace.vEndPos, Utils::GetEntityDrawColor(pEnemy, Vars::ESP::Main::EnableTeamEnemyColors.Value), true };
+		}
+	}
+}
+
+void CVisuals::SetVisionFlags()
+{
+	static ConVar* localplayer_visionflags = I::Cvar->FindVar("localplayer_visionflags");
+	if (localplayer_visionflags)
+	{
+		switch (Vars::Visuals::VisionModifier.Value)
+		{
+			case 1:
+				localplayer_visionflags->SetValue(1);
+				break;
+			case 2:
+				localplayer_visionflags->SetValue(2);
+				break;
+			case 3:
+				localplayer_visionflags->SetValue(4);
+				break;
+			default:
+				break;
 		}
 	}
 }
@@ -1073,4 +1162,197 @@ void CVisuals::PickupTimers()
 
 		++pickupData;
 	}
+}
+
+CClientClass* CVisuals::CPrecipitation::GetPrecipitationClass()
+{
+	static CClientClass* pReturn = nullptr;
+
+	if (!pReturn)
+	{
+		for (auto pClass = I::BaseClientDLL->GetAllClasses(); pClass; pClass = pClass->m_pNext)
+		{
+			if (pClass->m_ClassID == static_cast<int>(ETFClassID::CPrecipitation))
+			{
+				pReturn = pClass;
+				break;
+			}
+		}
+	}
+
+	return pReturn;
+}
+
+void CVisuals::CPrecipitation::Run()
+{
+	constexpr auto PRECIPITATION_INDEX = (MAX_EDICTS - 1);
+
+	const auto* pRainEntity = I::ClientEntityList->GetClientEntity(PRECIPITATION_INDEX);
+
+	if (!pRainEntity)
+	{
+		const auto pClass = GetPrecipitationClass();
+
+		if (!pClass || !pClass->m_pCreateFn)
+		{
+			return;
+		}
+
+		RainNetworkable = reinterpret_cast<IClientNetworkable * (__cdecl*)(int, int)>(pClass->m_pCreateFn)(PRECIPITATION_INDEX, 0);
+
+		if (!RainNetworkable)
+		{
+			return;
+		}
+
+		RainEntity = I::ClientEntityList->GetClientEntity(PRECIPITATION_INDEX);
+
+		if (!RainEntity)
+		{
+			return;
+		}
+
+		static auto dwOff = GetNetVar("CPrecipitation", "m_nPrecipType");
+
+		*reinterpret_cast<int*>(RainEntity + dwOff) = Vars::Visuals::Rain.Value - 1;
+
+		RainEntity->Networkable()->PreDataUpdate(DATA_UPDATE_CREATED);
+		RainEntity->Networkable()->OnPreDataChanged(DATA_UPDATE_CREATED);
+
+		RainEntity->m_vecMins() = Vec3(-32767.0f, -32767.0f, -32767.0f);
+		RainEntity->m_vecMaxs() = Vec3(32767.0f, 32767.0f, 32767.0f);
+
+		RainEntity->Networkable()->OnDataChanged(DATA_UPDATE_CREATED);
+		RainEntity->Networkable()->PostDataUpdate(DATA_UPDATE_CREATED);
+	}
+}
+
+void CVisuals::CPrecipitation::Cleanup()
+{
+	RainEntity = nullptr;
+	RainNetworkable = nullptr;
+}
+
+void CRunescapeChat::Draw()
+{
+	if (!Vars::Misc::RunescapeChat.Value)
+	{
+		return;
+	}
+	std::vector<size_t> vecRemovals;
+	const float curTime = I::GlobalVars->curtime;
+	Vec3 vHeadpos;
+	Vec3 vScreen;
+	for (size_t i = 0; i < m_vecChats.size(); i++)
+	{
+		auto& chat = m_vecChats.at(i);
+		if (chat.m_flTimeCreated + 4 < curTime)
+		{
+			vecRemovals.push_back(i);
+		}
+		else
+		{
+			if (chat.m_pEntity && chat.m_pEntity->IsAlive())
+			{
+				vHeadpos = chat.m_pEntity->GetHitboxPos(HITBOX_HEAD);
+				if (!vHeadpos.IsZero())
+				{
+					vHeadpos.z += 20;
+					if (Utils::W2S(vHeadpos, vScreen))
+					{
+						Color_t col = { 255, 255, 0, 255 };
+						switch (chat.m_Colour)
+						{
+							case eRS_RED:
+							{
+								col = { 255, 0, 0, 255 };
+								break;
+							}
+							case eRS_GREEN:
+							{
+								col = { 0, 255, 0, 255 };
+								break;
+							}
+							case eRS_CYAN:
+							{
+								col = { 0, 255, 255, 255 };
+								break;
+							}
+							case eRS_PURPLE:
+							{
+								col = { 255, 0, 255, 255 };
+								break;
+							}
+							case eRS_WHITE:
+							{
+								col = { 255,255,255,255 };
+								break;
+							}
+							default:break;
+						}
+						g_Draw.String(FONT_OSRS, vScreen.x, vScreen.y - (14 * chat.m_nOffset), col, ALIGN_CENTERHORIZONTAL, L"%ls", chat.m_szChatText.c_str());
+					}
+				}
+			}
+		}
+	}
+
+	for (auto& pos : vecRemovals)
+	{
+		m_vecChats.erase(m_vecChats.begin() + pos);
+	}
+}
+
+void CRunescapeChat::PushChat(CBaseEntity* pEntity, std::wstring szChatText)
+{
+	if (!Vars::Misc::RunescapeChat.Value)
+	{
+		return;
+	}
+	if (!pEntity) return;
+
+	EChatColour col = eRS_YELLOW;
+
+	if (!szChatText.rfind(L"red:", 0))
+	{
+		col = eRS_RED;
+		szChatText.erase(0, 4);
+	}
+	else if (!szChatText.rfind(L"green:", 0))
+	{
+		col = eRS_GREEN;
+		szChatText.erase(0, 6);
+	}
+	else if (!szChatText.rfind(L"cyan:", 0))
+	{
+		col = eRS_CYAN;
+		szChatText.erase(0, 5);
+	}
+	else if (!szChatText.rfind(L"purple:", 0))
+	{
+		col = eRS_PURPLE;
+		szChatText.erase(0, 7);
+	}
+	else if (!szChatText.rfind(L"white:", 0))
+	{
+		col = eRS_WHITE;
+		szChatText.erase(0, 6);
+	}
+
+
+
+
+	int highestOffset = 0;
+	for (auto& chat : m_vecChats)
+	{
+		if (chat.m_pEntity == pEntity)
+		{
+			if (chat.m_nOffset >= highestOffset)
+			{
+				highestOffset = chat.m_nOffset + 1;
+			}
+		}
+	}
+	Chat_t push = { pEntity, I::GlobalVars->curtime, highestOffset, col, szChatText };
+	m_vecChats.push_back(push);
 }

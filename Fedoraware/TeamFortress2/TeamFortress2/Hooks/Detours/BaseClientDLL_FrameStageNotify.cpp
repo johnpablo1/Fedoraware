@@ -2,9 +2,11 @@
 
 #include "../../Features/Resolver/Resolver.h"
 #include "../../Features/Visuals/Visuals.h"
+#include "../../Features/AttributeChanger/AttributeChanger.h"
 #include "../../Features/Menu/Playerlist/Playerlist.h"
 #include "../../Features/Backtrack/Backtrack.h"
 #include "../../Features/Aimbot/MovementSimulation/MovementSimulation.h"
+#include "../../Features/LuaEngine/Callbacks/LuaCallbacks.h"
 #include "../../Features/Backtrack/Backtrack.h"
 
 MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 35), void, __fastcall,
@@ -18,6 +20,16 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 
 			if (const auto& pLocal = g_EntityCache.GetLocal())
 			{
+				// Handle freecam position
+				if (G::FreecamActive && Vars::Visuals::FreecamKey.Value && GetAsyncKeyState(Vars::Visuals::FreecamKey.Value) & 0x8000)
+				{
+					pLocal->SetVecOrigin(G::FreecamPos);
+					pLocal->SetAbsOrigin(G::FreecamPos);
+				}
+
+
+
+
 				// Remove punch effect
 				{
 					G::PunchAngles = pLocal->GetPunchAngles();	//	use in aimbot 
@@ -44,6 +56,15 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 
 			break;
 		}
+
+
+		case EClientFrameStage::FRAME_NET_UPDATE_POSTDATAUPDATE_START:
+		{
+			F::AttributeChanger.Run();
+
+			break;
+		}
+
 
 		case EClientFrameStage::FRAME_NET_UPDATE_END:
 		{
@@ -96,6 +117,10 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 					F::Visuals.StoreMaterialHandles();
 					G::ShouldUpdateMaterialCache = false;
 				}
+				if (Vars::Visuals::Rain.Value > 0)
+				{
+					F::Visuals.rain.Run();
+				}
 
 				if (Vars::Visuals::SkyModulation.Value || Vars::Visuals::WorldModulation.Value)
 				{
@@ -105,4 +130,6 @@ MAKE_HOOK(BaseClientDLL_FrameStageNotify, Utils::GetVFuncPtr(I::BaseClientDLL, 3
 			break;
 		}
 	}
+
+	F::LuaCallbacks.OnFrameStage(static_cast<int>(curStage));
 }

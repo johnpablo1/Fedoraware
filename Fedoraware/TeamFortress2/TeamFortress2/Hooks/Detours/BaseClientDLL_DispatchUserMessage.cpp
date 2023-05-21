@@ -2,6 +2,7 @@
 
 #include "../../Features/Misc/Misc.h"
 #include "../../Features/ChatInfo/ChatInfo.h"
+#include "../../Features/LuaEngine/Callbacks/LuaCallbacks.h"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -9,6 +10,16 @@
 
 static int anti_balance_attempts = 0;
 static std::string previous_name;
+
+const static std::string CLEAR_MSG("?\nServer:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+								   "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+								   "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+								   "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+								   "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+								   "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+								   "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+
+const static std::vector<std::string> BAD_WORDS{ "cheat", "hack", "bot", "aim", "esp", "kick", "hax", "script" };
 
 static std::string clr({ '\x7', '0', 'D', '9', '2', 'F', 'F' });
 static std::string yellow({ '\x7', 'C', '8', 'A', '9', '0', '0' }); //C8A900
@@ -22,6 +33,7 @@ MAKE_HOOK(BaseClientDLL_DispatchUserMessage, Utils::GetVFuncPtr(I::BaseClientDLL
 	msgData.SetAssertOnOverflow(false);
 
 	F::ChatInfo.UserMessage(type, msgData);
+	F::LuaCallbacks.OnUserMessage(type, msgData);
 	msgData.Seek(0);
 
 	switch (type)
@@ -48,6 +60,41 @@ MAKE_HOOK(BaseClientDLL_DispatchUserMessage, Utils::GetVFuncPtr(I::BaseClientDLL
 			std::string playerName(nameBuffer);
 			std::string chatMessage(msgBuffer);
 
+			F::RSChat.PushChat(I::ClientEntityList->GetClientEntity(entIdx), Utils::ConvertUtf8ToWide(chatMessage));
+
+			// F::RSChat.PushChat(I::ClientEntityList->GetClientEntity(entIdx), chatMessage);
+			/*if (Vars::Misc::ChatCensor.Value)
+			{
+				PlayerInfo_t senderInfo{};
+				if (I::Engine->GetPlayerInfo(entIdx, &senderInfo))
+				{
+					if (entIdx == I::Engine->GetLocalPlayer()) { break; }
+					if (G::IsIgnored(senderInfo.friendsID) || g_EntityCache.IsFriend(entIdx))
+					{
+						break;
+					}
+
+					const std::vector<std::string> toReplace = { " ", "4", "3", "0", "6", "5", "7", "@", ".", ",", "-", "!" };
+					const std::vector<std::string> replaceWith = { "", "a", "e", "o", "g", "s", "t", "a", "", "", "", "i" };
+
+					for (std::vector<int>::size_type i = 0; i != toReplace.size(); i++)
+					{
+						boost::replace_all(chatMessage, toReplace[i], replaceWith[i]);
+					}
+
+					for (auto& word : BAD_WORDS)
+					{
+						if (boost::contains(chatMessage, word))
+						{
+							const std::string cmd = "say_team \"" + CLEAR_MSG + "\"";
+							I::Engine->ServerCmd(cmd.c_str(), true);
+							I::ClientMode->m_pChatElement->ChatPrintf(0, tfm::format("%s[FeD] \x3 %s\x1 wrote\x3 %s", clr, playerName, chatMessage).c_str());
+							break;
+						}
+					}
+				}
+			}*/
+
 			break;
 		}
 
@@ -67,7 +114,7 @@ MAKE_HOOK(BaseClientDLL_DispatchUserMessage, Utils::GetVFuncPtr(I::BaseClientDLL
 
 		case TextMsg:
 		{
-			if (Vars::Misc::AntiAutobalance.Value && msgData.GetNumBitsLeft() > 35)
+			if (Vars::Misc::AntiAutobal.Value && msgData.GetNumBitsLeft() > 35)
 			{
 				const INetChannel* server = I::EngineClient->GetNetChannelInfo();
 				const std::string data(bufData);
@@ -98,11 +145,28 @@ MAKE_HOOK(BaseClientDLL_DispatchUserMessage, Utils::GetVFuncPtr(I::BaseClientDLL
 		case VGUIMenu:
 		{
 			// Remove MOTD
-			if (Vars::Visuals::RemoveMOTD.Value)
+			if (Vars::Visuals::RemoveMOTD.Value || Vars::Misc::AutoJoin.Value)
 			{
 				if (strcmp(reinterpret_cast<char*>(msgData.m_pData), "info") == 0)
 				{
 					I::EngineClient->ClientCmd_Unrestricted("closedwelcomemenu");
+					return true;
+				}
+			}
+
+			// Autojoin team / class
+			if (Vars::Misc::AutoJoin.Value)
+			{
+				if (strcmp(reinterpret_cast<char*>(msgData.m_pData), "team") == 0)
+				{
+					I::EngineClient->ClientCmd_Unrestricted("autoteam");
+					return true;
+				}
+
+				if (strncmp(reinterpret_cast<char*>(msgData.m_pData), "class_", 6) == 0)
+				{
+					static std::string classNames[] = { "scout", "soldier", "pyro", "demoman", "heavyweapons", "engineer", "medic", "sniper", "spy" };
+					I::EngineClient->ClientCmd_Unrestricted(std::string("join_class").append(" ").append(classNames[Vars::Misc::AutoJoin.Value - 1]).c_str());
 					return true;
 				}
 			}
