@@ -468,7 +468,7 @@ namespace Utils
 		return wstr;
 	}
 
-	__inline float ATTRIB_HOOK_FLOAT(float baseValue, const char *searchString, CBaseEntity *ent, void *buffer, bool isGlobalConstString)
+	__inline float ATTRIB_HOOK_FLOAT(float baseValue, const char *searchString, CBaseEntity *ent, void *buffer = 0, bool isGlobalConstString = 1)
 	{
 		static auto fn = reinterpret_cast<float(__cdecl *)(float, const char *, CBaseEntity *, void *, bool)>(g_Pattern.Find(L"client.dll",
 			L"55 8B EC 83 EC 0C 8B 0D ? ? ? ? 53 56 57 33 F6 33 FF 89 75 F4 89 7D F8 8B 41 08 85 C0 74 38"));
