@@ -548,11 +548,7 @@ void CMenu::MenuVisuals()
 					}
 					WCombo("Health Text###ESPPlayerHealthText", &Vars::ESP::Players::HealthText.Value, { "Off", "Default", "Bar" }); HelpMarker("Draws the player health as a text");
 					WToggle("Distance", &Vars::ESP::Players::Distance.Value); HelpMarker("Shows the distance from you to the player in meters");
-					WToggle("Conditions", &Vars::ESP::Players::Conditions::Enabled.Value);
-					if (Vars::ESP::Players::Conditions::Enabled.Value)
-					{
-						MultiCombo({ "Lag Compensation", "Ping", }, { &Vars::ESP::Players::Conditions::LagComp.Value, &Vars::ESP::Players::Conditions::Ping.Value }, "Condition List");
-					}
+					WToggle("Condition", &Vars::ESP::Players::Cond.Value); HelpMarker("Will draw what conditions the player is under");
 					ColorPickerL("Condition colour", Colors::Cond);
 					WToggle("Priority Text", &Vars::ESP::Players::PriorityText.Value); HelpMarker("Will show you what priority the enemy is. (Attempts to automatically mark cheaters.)");
 					WCombo("Box###PlayerBoxESP", &Vars::ESP::Players::Box.Value, { "Off", "Bounding", "Cornered", "3D" }); HelpMarker("What sort of box to draw on players");
