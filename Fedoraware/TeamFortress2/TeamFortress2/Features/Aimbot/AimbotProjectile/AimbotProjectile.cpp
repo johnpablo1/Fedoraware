@@ -481,7 +481,7 @@ std::optional<Vec3> CAimbotProjectile::GetAimPos(CBaseEntity* pLocal, CBaseEntit
 
 	static KeyHelper kCritHack{ &Vars::CritHack::CritKey.Value };
 
-	if (pWeapon->GetWeaponID() == TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT)
+	if (G::CurItemDefIndex == TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT) 
 	{
 		if (kCritHack.Down() || pLocal->IsCritBoosted()) //force baim with direct hit if critting
 		{
