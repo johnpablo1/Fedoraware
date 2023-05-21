@@ -127,10 +127,10 @@ bool CMovementSimulation::Initialize(CBaseEntity* pPlayer)
 			pPlayer->m_bInDuckJump() = false;
 		}
 
-		//if (pPlayer != g_EntityCache.GetLocal())
-		//{
-		//	pPlayer->m_hGroundEntity() = -1; //this is bs you don't need this
-		//} 
+		if (pPlayer != g_EntityCache.GetLocal())
+		{
+			pPlayer->m_hGroundEntity() = -1; //without this nonlocal players get snapped to the floor
+		}
 
 		pPlayer->m_flModelScale() -= 0.03125f; //fixes issues with corners
 
@@ -191,9 +191,9 @@ void CMovementSimulation::FillVelocities()
 				continue;
 			}
 
-			//if (G::ChokeMap[pEntity->GetIndex()]) {	//	dont recache the same angle for lagging players. WHY? JUST WHY
-			//	continue;
-			//}
+			if (G::ChokeMap[pEntity->GetIndex()]) {	//	dont recache the same angle for lagging players.
+				continue;
+			}
 
 			const Vec3 vVelocity = pEntity->GetVelocity();
 			m_Velocities[iEntIndex].push_front(vVelocity);
@@ -285,9 +285,8 @@ bool CMovementSimulation::StrafePrediction()
 
 		flAverageYaw /= i;
 
-		//while (flAverageYaw > 360.f) { flAverageYaw -= 360.f; }
-		//while (flAverageYaw < -360.f) { flAverageYaw += 360.f; } just no
-		 fmod(flAverageYaw + 180.0f, 360.0f) - 180.0f;
+		while (flAverageYaw > 360.f) { flAverageYaw -= 360.f; }
+		while (flAverageYaw < -360.f) { flAverageYaw += 360.f; }
 
 		if (fabsf(flAverageYaw) < Vars::Aimbot::Projectile::StrafePredictionMinDifference.Value)
 		{
@@ -309,7 +308,7 @@ bool CMovementSimulation::StrafePrediction()
 				return tmp;
 		};
 
-		const float flMaxDelta = (get_velocity_degree(flAverageYaw) / fmaxf((float)iSamples, 2.f));
+		const float flMaxDelta = (get_velocity_degree(flAverageYaw) / fmaxf((float)iSamples / 2.f, 1.f));
 
 		if (fabsf(flAverageYaw) > flMaxDelta) {
 			m_Velocities[m_pPlayer->GetIndex()].clear();
