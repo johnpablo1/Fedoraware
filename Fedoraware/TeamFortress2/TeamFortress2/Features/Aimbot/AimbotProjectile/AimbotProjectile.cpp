@@ -23,10 +23,7 @@ Vec3 CAimbotProjectile::Predictor_t::Extrapolate(float time)
 /* Returns the projectile info of a given weapon */
 bool CAimbotProjectile::GetProjectileInfo(CBaseCombatWeapon* pWeapon, ProjectileInfo_t& out)
 {
-<<<<<<< HEAD
-=======
 
->>>>>>> parent of 3b75cab6 (Better proj info)
 	switch (pWeapon->GetWeaponID())
 	{
 		case TF_WEAPON_ROCKETLAUNCHER:
