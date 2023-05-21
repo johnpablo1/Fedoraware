@@ -30,7 +30,7 @@ bool CAimbotProjectile::GetProjectileInfo(CBaseCombatWeapon* pWeapon, Projectile
 		case TF_WEAPON_PARTICLE_CANNON:
 		{
 			IsBoosted = true;
-			out = { Utils::ATTRIB_HOOK_FLOAT(1100.0f, "mult_projectile_speed", pWeapon), 0.0f };
+			out = { Utils::ATTRIB_HOOK_FLOAT(1100.0f, "mult_projectile_speed", pWeapon, 0, 1), 0.0f };
 			break;
 		}
 
@@ -40,11 +40,7 @@ bool CAimbotProjectile::GetProjectileInfo(CBaseCombatWeapon* pWeapon, Projectile
 			float speed = isLochnLoad ? 1490.0f : 1200.0f;
 
 			IsBoosted = true;
-<<<<<<< HEAD
 			out = { speed, 0.5f, Utils::ATTRIB_HOOK_FLOAT(2.3f, "fuse_mult", pWeapon, 0, 1) };
-=======
-			out = { speed, 0.5f, Utils::ATTRIB_HOOK_FLOAT(3.0f, "fuse_mult", pWeapon) };
->>>>>>> parent of 9485b20c (Revert "Shorten AttribHook")
 			break;
 
 		}
@@ -52,8 +48,8 @@ bool CAimbotProjectile::GetProjectileInfo(CBaseCombatWeapon* pWeapon, Projectile
 		case TF_WEAPON_PIPEBOMBLAUNCHER:
 		{
 			float charge = (I::GlobalVars->curtime - pWeapon->GetChargeBeginTime());
-			float speed = Math::RemapValClamped(charge, 0.0f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 900.0f, 2400.0f);
-			float grav_mod = Math::RemapValClamped(charge, 0.0f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon), 0.5f, 0.1f);
+			float speed = Math::RemapValClamped(charge, 0.0f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon, 0, 1), 900.0f, 2400.0f);
+			float grav_mod = Math::RemapValClamped(charge, 0.0f, Utils::ATTRIB_HOOK_FLOAT(4.0f, "stickybomb_charge_rate", pWeapon, 0, 1), 0.5f, 0.1f);
 
 			out = { speed, grav_mod };
 			break;
@@ -1023,7 +1019,7 @@ bool CAimbotProjectile::GetSplashTarget(CBaseEntity* pLocal, CBaseCombatWeapon* 
 
 	std::optional<float> splashRadius;
 
-	splashRadius = Utils::ATTRIB_HOOK_FLOAT(148, "mult_explosion_radius", pWeapon);
+	splashRadius = Utils::ATTRIB_HOOK_FLOAT(148, "mult_explosion_radius", pWeapon, 0, 1);
 	float splashRadiusModified = splashRadius.value() * 0.8; //this value will only be used if you are blast jumping with the air strike
 
 	//check if you are rocket jumping, and change the value appropriately, because the air strike blast radius changes if you are rocket jumping.
