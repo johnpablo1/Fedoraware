@@ -1,4 +1,5 @@
 #include "../Hooks.h"
+#include "../../Features/TickHandler/TickHandler.h"
 
 //	"NetMsg"
 //	@net_chan.cpp L2524
@@ -51,21 +52,20 @@ MAKE_HOOK(CNetChan_SendNetMsg, g_Pattern.Find(L"engine.dll", L"55 8B EC 57 8B F9
 
 		case clc_Move:
 		{
-			const int iAllowedNewCommands = 24 - G::ShiftedTicks;
+			static int iOldShift = G::ShiftedTicks;
+			const int iAllowedNewCommands = fmax(fmin(24 - G::ShiftedTicks, 22), 0);
 			const auto& moveMsg = reinterpret_cast<CLC_Move&>(msg);
-			if (moveMsg.m_nNewCommands > iAllowedNewCommands)
+			const int iCmdCount = moveMsg.m_nNewCommands + moveMsg.m_nBackupCommands;
+			if (iCmdCount > iAllowedNewCommands)
 			{
-<<<<<<< HEAD
 				if (Vars::Debug::DebugInfo.Value)
 				{
 					Utils::ConLog("clc_Move", tfm::format("%d sent <%d | %d>, max was %d.", iCmdCount, moveMsg.m_nNewCommands, moveMsg.m_nBackupCommands, iAllowedNewCommands).c_str(), { 0, 222, 255, 255 });
 				}
 				G::ShiftedTicks -= iCmdCount - iAllowedNewCommands;
 				F::Ticks.iDeficit = iCmdCount - iAllowedNewCommands;
-=======
-				G::ShiftedTicks -= moveMsg.m_nNewCommands - iAllowedNewCommands;
->>>>>>> parent of 5e847218 (Push Experimental Fedoraware Updates)
 			}
+			iOldShift = G::ShiftedTicks;
 			break;
 		}
 	}
