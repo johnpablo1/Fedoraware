@@ -177,7 +177,7 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 	const float maxTime = predictor.m_pEntity->IsPlayer()
 		? (projInfo.m_flMaxTime == 0.f ? m_flPredictionTime : projInfo.m_flMaxTime)
 		: (projInfo.m_flMaxTime == 0.f ? 1024.f : projInfo.m_flMaxTime);
-	const float fLatency = pNetChannel->GetLatency(MAX_FLOWS);
+	const float fLatency = pNetChannel->GetLatency(FLOW_OUTGOING) + pNetChannel->GetLatency(FLOW_INCOMING) + G::LerpTime;	//	correct
 	/*
 			This should now be able to predict anything that moves.
 			Should also stop wasting time predicting static players.
@@ -259,6 +259,16 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 
 		if (F::MoveSim.Initialize(predictor.m_pEntity))
 		{
+			if (!predictor.m_pEntity) {
+				F::MoveSim.Restore();
+				return false;
+			}
+
+			for (int n = 0; n < TIME_TO_TICKS(fLatency); n++) {
+				//ik this causes issues with maxtime but I prefer this behaviour
+				F::MoveSim.RunTick(moveData, absOrigin);
+			}
+
 			for (int n = 0; n < TIME_TO_TICKS(maxTime); n++)
 			{
 				if (predictor.m_pEntity == nullptr)
