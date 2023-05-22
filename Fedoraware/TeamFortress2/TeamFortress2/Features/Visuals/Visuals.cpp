@@ -461,6 +461,7 @@ void CVisuals::DrawTickbaseInfo(CBaseEntity* pLocal)
 						{
 							g_Draw.String(FONT_INDICATORS, DTBox.x + DTBox.w, DTBox.y - 10, { 255, 126, 0, 255 }, ALIGN_REVERSE, L"CHARGING");
 						}
+<<<<<<< HEAD
 						else if (G::WaitForShift) // waiting
 						{
 							g_Draw.String(FONT_INDICATORS, DTBox.x + DTBox.w, DTBox.y - 10, { 255, 46, 46, 255 }, ALIGN_REVERSE, L"DT IMPOSSIBLE");
@@ -470,8 +471,16 @@ void CVisuals::DrawTickbaseInfo(CBaseEntity* pLocal)
 							g_Draw.String(FONT_INDICATORS, DTBox.x + DTBox.w, DTBox.y - 10, { 255, 46, 46, 255 }, ALIGN_REVERSE, L"NOT ON GROUND");
 						}
 						else	// ready 
+=======
+						else if (!G::WaitForShift && ratioCurrent == 1) // ready (only show if we are fully charged)
+>>>>>>> parent of 5e847218 (Push Experimental Fedoraware Updates)
 						{
 							g_Draw.String(FONT_INDICATORS, DTBox.x + DTBox.w, DTBox.y - 10, { 66, 255, 0, 255 }, ALIGN_REVERSE, L"READY");
+
+						}
+						else	//waiting 
+						{
+							g_Draw.String(FONT_INDICATORS, DTBox.x + DTBox.w, DTBox.y - 10, { 255, 46, 46, 255 }, ALIGN_REVERSE, L"DT IMPOSSIBLE");
 						}
 						break;
 					}
