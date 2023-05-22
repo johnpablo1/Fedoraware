@@ -100,7 +100,7 @@ bool CAimbotProjectile::GetProjectileInfo(CBaseCombatWeapon* pWeapon, Projectile
 			};
 			break;
 		}
-
+		
 		case TF_WEAPON_PIPEBOMBLAUNCHER:
 		{
 			const float charge = (I::GlobalVars->curtime - pWeapon->GetChargeBeginTime());
@@ -175,10 +175,9 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 
 	Vec3 vLocalPos = pLocal->GetEyePosition();
 	const float maxTime = predictor.m_pEntity->IsPlayer()
-		? (projInfo.m_flMaxTime == 0.f ? Vars::Aimbot::Projectile::PredictionTime.Value : projInfo.m_flMaxTime)
+		? (projInfo.m_flMaxTime == 0.f ? m_flPredictionTime : projInfo.m_flMaxTime)
 		: (projInfo.m_flMaxTime == 0.f ? 1024.f : projInfo.m_flMaxTime);
 	const float fLatency = pNetChannel->GetLatency(FLOW_OUTGOING) + pNetChannel->GetLatency(FLOW_INCOMING) + G::LerpTime;	//	correct
-
 	/*
 			This should now be able to predict anything that moves.
 			Should also stop wasting time predicting static players.
@@ -193,13 +192,11 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 			return false;
 		}
 
-		// get angle offsets for demoman weapons?weew
+		// get angle offsets for demoman weapons?
 		switch (pWeapon->GetWeaponID())
 		{
 			case TF_WEAPON_GRENADELAUNCHER:
 			case TF_WEAPON_PIPEBOMBLAUNCHER:
-			case TF_WEAPON_STICKBOMB:
-			case TF_WEAPON_STICKY_BALL_LAUNCHER:
 			{
 				Vec3 vDelta = (staticPos.value() - vLocalPos);
 				const float fRange = Math::VectorNormalize(vDelta);
@@ -228,8 +225,6 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 		{
 			case TF_WEAPON_GRENADELAUNCHER:
 			case TF_WEAPON_PIPEBOMBLAUNCHER:
-			case TF_WEAPON_STICKBOMB:
-			case TF_WEAPON_STICKY_BALL_LAUNCHER:
 			{
 				Vec3 vecOffset(16.0f, 8.0f, -6.0f);
 				Utils::GetProjectileFireSetup(pLocal, pCmd->viewangles, vecOffset, &vLocalPos);
@@ -239,7 +234,7 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 			default: break;
 		}
 
-		if (!CalcProjAngle(vLocalPos, staticPos.value(), projInfo, out))
+		if (!CalcProjAngle(vLocalPos, staticPos.value(), projInfo, out)) 
 		{
 			return false;
 		}
@@ -249,7 +244,7 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 			return false;
 		}
 
-		if (WillProjectileHit(pLocal, pWeapon, pCmd, staticPos.value(), out, projInfo, predictor))
+		if (WillProjectileHit(pLocal, pWeapon, pCmd, staticPos.value(), out, projInfo, predictor)) 
 		{
 			G::PredictedPos = staticPos.value();
 			return true;
@@ -260,7 +255,7 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 		Vec3 vPredictedPos = {};
 		CMoveData moveData = {};
 		Vec3 absOrigin = {};
-		bool bNeedsTimeCheck = false;	//fuick me
+		bool bNeedsTimeCheck = false;	//fuck me
 
 		if (F::MoveSim.Initialize(predictor.m_pEntity))
 		{
@@ -269,8 +264,17 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 				return false;
 			}
 
+			for (int n = 0; n < TIME_TO_TICKS(fLatency); n++) {
+				//ik this causes issues with maxtime but I prefer this behaviour
+				F::MoveSim.RunTick(moveData, absOrigin);
+			}
+
 			for (int n = 0; n < TIME_TO_TICKS(maxTime); n++)
 			{
+				if (predictor.m_pEntity == nullptr)
+				{
+					break;
+				}
 				F::MoveSim.RunTick(moveData, absOrigin);
 				vPredictedPos = absOrigin;
 
@@ -282,20 +286,23 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 					else { break; }
 				} // don't remove.
 
+				// we have found a point.
+				if (bNeedsTimeCheck)
+				{
+					if (TICKS_TO_TIME(n - 1) > (pLocal->GetAbsOrigin().DistTo(vPredictedPos) / projInfo.m_flVelocity)) { break; }
+				}
+
 				//const Vec3 vAimDelta = predictor.m_pEntity->GetAbsOrigin() - aimPosition;
 				//vPredictedPos.x += abs(vAimDelta.x);
 				//vPredictedPos.y += abs(vAimDelta.y);
 				//vPredictedPos.z += abs(vAimDelta.z);
 				vPredictedPos = aimPosition.value();
 
-
 				// get angle offsets for demoman weapons?
 				switch (pWeapon->GetWeaponID())
 				{
 					case TF_WEAPON_GRENADELAUNCHER:
 					case TF_WEAPON_PIPEBOMBLAUNCHER:
-					case TF_WEAPON_STICKBOMB:
-					case TF_WEAPON_STICKY_BALL_LAUNCHER:
 					{
 						Vec3 vDelta = (vPredictedPos - vLocalPos);
 						const float fRange = Math::VectorNormalize(vDelta);
@@ -325,8 +332,6 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 				{
 					case TF_WEAPON_GRENADELAUNCHER:
 					case TF_WEAPON_PIPEBOMBLAUNCHER:
-					case TF_WEAPON_STICKBOMB:
-					case TF_WEAPON_STICKY_BALL_LAUNCHER:
 					{
 						Vec3 vecOffset(16.0f, 8.0f, -6.0f);
 						Utils::GetProjectileFireSetup(pLocal, pCmd->viewangles, vecOffset, &vLocalPos);
@@ -339,10 +344,6 @@ bool CAimbotProjectile::SolveProjectile(CBaseEntity* pLocal, CBaseCombatWeapon* 
 				if (!CalcProjAngle(vLocalPos, vPredictedPos, projInfo, out))
 				{
 					break;
-				}
-
-				if (TIME_TO_TICKS(out.m_flTime) > (n + 1)) {
-					continue;
 				}
 
 				out.m_flTime += fLatency;
@@ -406,7 +407,6 @@ std::optional<Vec3> CAimbotProjectile::GetAimPos(CBaseEntity* pLocal, CBaseEntit
 	const Vec3 vHeadDelta = Utils::GetHeadOffset(pEntity);
 
 	const std::vector vPoints = {
-		// oh you don't like 15 points because it fucks your fps??? TOO BAD!//
 		Vec3(vHeadDelta.x, vHeadDelta.y, vMaxs.z), //	head bone probably
 		Vec3(0, 0, (vMins.z + vMaxs.z) / 2), //	middles (scan first bc they are more accurate)
 		Vec3(0, 0, vMins.z), //	-
@@ -432,9 +432,9 @@ std::optional<Vec3> CAimbotProjectile::GetAimPos(CBaseEntity* pLocal, CBaseEntit
 	};
 
 	int iAimMethod = Vars::Aimbot::Projectile::AimPosition.Value;
-
 	int iCurPoint = 0, iTestPoints = 0; //maybe better way to do this
 	for (const auto& vPoint : vPoints)
+	for (const auto& point : vPoints)
 	{
 		if (iTestPoints > Vars::Aimbot::Projectile::VisTestPoints.Value) { break; }
 		if (static_cast<int>(vVisPoints.size()) >= Vars::Aimbot::Projectile::ScanPoints.Value) { break; }
@@ -461,17 +461,18 @@ std::optional<Vec3> CAimbotProjectile::GetAimPos(CBaseEntity* pLocal, CBaseEntit
 	}
 
 	Vec3 HeadPoint, TorsoPoint, FeetPoint;
-	
+
 	const auto& pWeapon = g_EntityCache.GetWeapon();
 	if (!pWeapon) { return vRetVec; }
-	
+
 	const int iClassNum = pLocal->GetClassNum();
 	const int iSlot = pWeapon->GetSlot();
-
 	static KeyHelper kBounce{ &Vars::Aimbot::Projectile::BounceKey.Value };
 
 	if (kBounce.Down())	//	player demands we aim at feet (fetishist ngl)
-	{ iAimMethod = 2; }
+	{
+		iAimMethod = 2;
+	}
 
 	while (iAimMethod == 3)
 	{
@@ -500,7 +501,7 @@ std::optional<Vec3> CAimbotProjectile::GetAimPos(CBaseEntity* pLocal, CBaseEntit
 		{ iAimMethod = 1; break; }
 		}
 	}
-	
+
 	if (Vars::Debug::DebugInfo.Value)
 	{
 		I::Cvar->ConsolePrintf("iAimMethod	: %d\n", iAimMethod);
@@ -532,7 +533,7 @@ std::optional<Vec3> CAimbotProjectile::GetAimPos(CBaseEntity* pLocal, CBaseEntit
 			Math::VectorTransform(vPoints.at(1), transform, TorsoPoint);
 			for (const auto& vAimPoint : vVisPoints)
 			{
-				if (vAimPoint.DistTo(TorsoPoint) < vRetVec.value().DistTo(TorsoPoint))
+				if (vAimPoint.DistTo(TorsoPoint) < vRetVec.value().DistTo(TorsoPoint)) 
 				{
 					vRetVec = vAimPoint;
 				}
@@ -556,7 +557,7 @@ std::optional<Vec3> CAimbotProjectile::GetAimPos(CBaseEntity* pLocal, CBaseEntit
 	return vRetVec.value().DistTo(vLocalPos) < 1.f ? std::nullopt : vRetVec;	//	messy lol
 }
 
-std::optional<Vec3> CAimbotProjectile::GetAimPosBuilding(CBaseEntity* pLocal, CBaseEntity* pEntity)
+std::optional<Vec3> CAimbotProjectile::GetAimPosBuilding(CBaseEntity* pLocal, CBaseEntity* pEntity) 
 {
 	const Vec3 vLocalPos = pLocal->GetShootPos();
 
@@ -603,13 +604,14 @@ bool CAimbotProjectile::WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon
 	static CTraceFilterWorldAndPropsOnly traceFilter = {};
 	traceFilter.pSkip = predictor.m_pEntity;
 
-	// this shit's messy
 	{
+		// x = forward / backward
+		// y = left / right
+		// z = up / down
 		switch (pWeapon->GetWeaponID())
 		{
 			case TF_WEAPON_PARTICLE_CANNON:
 			{
-				hullSize = { 1.f, 1.f, 1.f };
 				Vec3 vecOffset(23.5f, 8.0f, -3.0f); //tf_weaponbase_gun.cpp @L529 & @L760
 				if (pLocal->IsDucking())
 				{
@@ -620,7 +622,6 @@ bool CAimbotProjectile::WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon
 			}
 			case TF_WEAPON_CROSSBOW:
 			{
-				hullSize = { 3.f, 3.f, 3.f };
 				const Vec3 vecOffset(23.5f, -8.0f, -3.0f);
 				Utils::GetProjectileFireSetup(pLocal, predictedViewAngles, vecOffset, &vVisCheck);
 				break;
@@ -630,12 +631,10 @@ bool CAimbotProjectile::WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon
 			case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:
 			case TF_WEAPON_FLAREGUN:
 			{
-				hullSize = { 0.f, 3.7f, 3.7f };
-
 				Vec3 vecOffset = Vec3(23.5f, 12.0f, -3.0f); //tf_weaponbase_gun.cpp @L529 & @L760
 				if (G::CurItemDefIndex == Soldier_m_TheOriginal)
 				{
-					vecOffset.y = 0.f;
+					vecOffset.y = 0.f; // this shitty cheat shoots walls with splash prediction enabled, even if this is set to 0
 				}
 				if (pLocal->IsDucking())
 				{
@@ -646,25 +645,20 @@ bool CAimbotProjectile::WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon
 			}
 			case TF_WEAPON_SYRINGEGUN_MEDIC:
 			{
-				hullSize = { 0.f, 1.f, 1.f };
-
 				const Vec3 vecOffset(16.f, 6.f, -8.f); //tf_weaponbase_gun.cpp @L628
 				Utils::GetProjectileFireSetup(pLocal, predictedViewAngles, vecOffset, &vVisCheck);
 				break;
 			}
 			case TF_WEAPON_COMPOUND_BOW:
 			{
-				hullSize = { 1.f, 1.f, 1.f };	//	tf_projectile_arrow.cpp @L271
-
-				const Vec3 vecOffset(23.5f, 12.0f, -3.0f); //tf_weapon_grapplinghook.cpp @L355 ??
+				const Vec3 vecOffset(23.5f, -8.0f, -3.0f); //tf_weaponbase_gun.cpp @L798
 				Utils::GetProjectileFireSetup(pLocal, predictedViewAngles, vecOffset, &vVisCheck);
 				break;
 			}
 			case TF_WEAPON_RAYGUN:
 			case TF_WEAPON_DRG_POMSON:
 			{
-				hullSize = { 0.1f, 0.1f, 0.1f };
-				Vec3 vecOffset(23.5f, -8.0f, -3.0f); //tf_weaponbase_gun.cpp @L568
+				Vec3 vecOffset(23.5f, 8.0f, -3.0f); //tf_weaponbase_gun.cpp @L568
 				if (pLocal->IsDucking())
 				{
 					vecOffset.z = 8.0f;
@@ -674,11 +668,7 @@ bool CAimbotProjectile::WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon
 			}
 			case TF_WEAPON_GRENADELAUNCHER:
 			case TF_WEAPON_PIPEBOMBLAUNCHER:
-			case TF_WEAPON_STICKBOMB:
-			case TF_WEAPON_STICKY_BALL_LAUNCHER:
 			{
-				hullSize = { 2.f, 2.f, 2.f };
-
 				auto vecAngle = Vec3(), vecForward = Vec3(), vecRight = Vec3(), vecUp = Vec3();
 				Math::AngleVectors({ -RAD2DEG(out.m_flPitch), RAD2DEG(out.m_flYaw), 0.0f }, &vecForward, &vecRight, &vecUp);
 				const Vec3 vecVelocity = ((vecForward * projInfo.m_flVelocity) - (vecUp * 200.0f));
@@ -695,10 +685,60 @@ bool CAimbotProjectile::WillProjectileHit(CBaseEntity* pLocal, CBaseCombatWeapon
 		}
 	}
 
-	//	TODO: find the actual hull size of projectiles
-	//	maybe - https://www.unknowncheats.me/forum/team-fortress-2-a/475502-weapons-projectile-min-max-collideables.html
-	//	UTIL_SetSize( this, -Vector( 1.0f, 1.0f, 1.0f ), Vector( 1.0f, 1.0f, 1.0f ) ); @tf_projectile_base.cpp L117
-	//	UTIL_TraceHull( vecEye, vecSrc, -Vector(8,8,8), Vector(8,8,8), MASK_SOLID_BRUSHONLY, &traceFilter, &trace ); @tf_weaponbase_gun.cpp L696 pills
+	//Get hull sizes for projectiles
+	switch (pWeapon->GetWeaponID())
+	{
+		case TF_WEAPON_COMPOUND_BOW:
+		case TF_WEAPON_JAR:
+		case TF_WEAPON_JAR_MILK:
+		case TF_WEAPON_SHOTGUN_BUILDING_RESCUE:
+		case TF_WEAPON_SPELLBOOK:
+		case TF_WEAPON_FLAME_BALL:
+		{
+			hullSize = { 1.f, 1.f, 1.f };
+			break;
+		}
+		case TF_WEAPON_CROSSBOW:
+		{
+			hullSize = { 3.f, 3.f, 3.f };
+			break;
+		}
+		case TF_WEAPON_ROCKETLAUNCHER:	 // rockets can go thru 1 HU gaps, so just set this to 0
+		case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:       // when you use glow in rijin, it has a 1 pixel glow on rockets, proving this further
+		case TF_WEAPON_PARTICLE_CANNON:
+		{
+			hullSize = { 0.f, 0.f, 0.f }; 
+			break;
+		}
+		case TF_WEAPON_FLAREGUN:
+		case TF_WEAPON_RAYGUN_REVENGE:
+		{
+			hullSize = { 0.f, 3.7f, 3.7f };
+			break;
+		}
+		case TF_WEAPON_RAYGUN:
+		case TF_WEAPON_DRG_POMSON:
+		{
+			hullSize = { 0.1f, 0.1f, 0.1f };
+			break;
+		}
+		case TF_WEAPON_SYRINGEGUN_MEDIC:
+		{
+			hullSize = { 0.f, 1.f, 1.f };
+			break;
+		}
+		case TF_WEAPON_GRENADELAUNCHER:
+		case TF_WEAPON_PIPEBOMBLAUNCHER:
+		{
+			hullSize = { 2.f, 2.f, 2.f };
+			break;
+		}
+		default: break;
+	}
+ /* TODO: find the actual hull size of projectiles
+	maybe - https://www.unknowncheats.me/forum/team-fortress-2-a/475502-weapons-projectile-min-max-collideables.html
+	Utils::SetSize( this, -Vector( 1.0f, 1.0f, 1.0f ), Vector( 1.0f, 1.0f, 1.0f ) ); @tf_projectile_base.cpp L117
+	Utils::TraceHull( vecEye, vecSrc, -Vector(8,8,8), Vector(8,8,8), MASK_SOLID_BRUSHONLY, &traceFilter, &trace ); @tf_weaponbase_gun.cpp L696 pills */
 	Utils::TraceHull(vVisCheck, vPredictedPos, hullSize * 1.01f, hullSize * -1.01f, MASK_SHOT_HULL, &traceFilter, &trace);
 
 	return trace.flFraction == 1.f || trace.entity;
@@ -988,12 +1028,6 @@ bool CAimbotProjectile::IsAttacking(const CUserCmd* pCmd, CBaseCombatWeapon* pWe
 			}
 		}
 
-		//pssst..
-		//Dragon's Fury has a gauge (seen on the weapon model) maybe it would help for pSilent hmm..
-		/*
-		if (pWeapon->GetWeaponID() == 109) {
-		}*/
-
 		else
 		{
 			if ((pCmd->buttons & IN_ATTACK) && G::WeaponCanAttack)
@@ -1012,7 +1046,6 @@ bool CAimbotProjectile::GetSplashTarget(CBaseEntity* pLocal, CBaseCombatWeapon* 
 	if (!Vars::Aimbot::Projectile::SplashPrediction.Value) { return false; }
 
 	std::optional<float> splashRadius;
-
 	splashRadius = Utils::ATTRIB_HOOK_FLOAT(148, "mult_explosion_radius", pWeapon, 0, 1);
 	float splashRadiusModified = splashRadius.value() * 0.8; //this value will only be used if you are blast jumping with the air strike
 
@@ -1020,7 +1053,7 @@ bool CAimbotProjectile::GetSplashTarget(CBaseEntity* pLocal, CBaseCombatWeapon* 
 	if (pLocal->GetCondEx2() & TFCondEx2_BlastJumping && G::CurItemDefIndex == Soldier_m_TheAirStrike)
 		splashRadius = splashRadiusModified;
 
-	// Don't do it with the direct hit or if the splash radius is unknown
+	// Don't splash predict with the direct hit or if the splash radius is unknown
 	if (pWeapon->GetClassID() == ETFClassID::CTFRocketLauncher_DirectHit || !splashRadius) { return false; }
 
 	const auto& sortMethod = static_cast<ESortMethod>(Vars::Aimbot::Projectile::SortMethod.Value);
@@ -1030,7 +1063,7 @@ bool CAimbotProjectile::GetSplashTarget(CBaseEntity* pLocal, CBaseCombatWeapon* 
 
 	for (const auto& pTarget : g_EntityCache.GetGroup(EGroupType::PLAYERS_ENEMIES))
 	{
-		if (!pTarget || !pTarget->IsAlive() || !pTarget->IsOnGround()) { continue; }
+		if (!pTarget || !pTarget->IsAlive()) { continue; }
 
 		if (F::AimbotGlobal.ShouldIgnore(pTarget))
 		{
@@ -1042,7 +1075,7 @@ bool CAimbotProjectile::GetSplashTarget(CBaseEntity* pLocal, CBaseCombatWeapon* 
 
 		if (vLocalOrigin.DistTo(vTargetOrigin) < Vars::Aimbot::Projectile::MinSplashPredictionDistance.Value) { continue; } // Don't shoot too close
 		if (vLocalOrigin.DistTo(vTargetOrigin) > Vars::Aimbot::Projectile::MaxSplashPredictionDistance.Value) { continue; } // Don't shoot too far
-		if (vLocalOrigin.z < vTargetOrigin.z - 45.f) { continue; } // Don't shoot from below
+		if (vLocalOrigin.z < vTargetOrigin.z - 15.f) { continue; } // Don't shoot from below
 
 		// Don't predict enemies that are visible
 		if (Utils::VisPos(pLocal, pTarget, pLocal->GetShootPos(), vTargetCenter)) { continue; }
@@ -1074,7 +1107,6 @@ bool CAimbotProjectile::GetSplashTarget(CBaseEntity* pLocal, CBaseCombatWeapon* 
 				scanPos = Utils::GetRotatedPosition(vTargetCenter, static_cast<float>(i), currentRadius - 10.f);
 				currentRadius -= 10.f;
 			}
-
 			/*
 			 *	We found the closest point!
 			 *	Now we need to get the shoot pos/angles relative to vTargetOrigin instead of vTargetCenter
